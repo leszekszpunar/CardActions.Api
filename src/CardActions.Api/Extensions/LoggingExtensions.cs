@@ -52,7 +52,12 @@ public static class LoggingExtensions
     {
         var resourceBuilder = ResourceBuilder.CreateDefault()
             .AddService(serviceName: "CardActions.Api",
-                serviceVersion: typeof(LoggingExtensions).Assembly.GetName().Version?.ToString() ?? "unknown");
+                serviceVersion: typeof(LoggingExtensions).Assembly.GetName().Version?.ToString() ?? "unknown")
+            .AddAttributes(new Dictionary<string, object>
+            {
+                ["environment"] = configuration["ASPNETCORE_ENVIRONMENT"] ?? "Production",
+                ["application"] = "CardActions.Api"
+            });
 
         services.AddOpenTelemetry()
             .WithMetrics(metrics => metrics

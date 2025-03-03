@@ -13,8 +13,6 @@ using CardActions.Api.Middleware;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Hosting.Server;
-using CardActions.Application.Common.Interfaces;
-using CardActions.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var logger = Log.ForContext<Program>();
@@ -40,19 +38,16 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddInfrastructureData();
 
-    // Add localization service
-    builder.Services.AddSingleton<ILocalizationService, StringLocalizerWrapper>();
-
-    // // Configure CORS
-    // builder.Services.AddCors(options =>
-    // {
-    //     options.AddDefaultPolicy(policy =>
-    //     {
-    //         policy.AllowAnyOrigin()
-    //               .AllowAnyHeader()
-    //               .AllowAnyMethod();
-    //     });
-    // });
+    // Configure CORS
+    builder.Services.AddCors(options =>
+    {
+        options.AddDefaultPolicy(policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+    });
 
     // Configure API
     //builder.Services.AddApiConfiguration();
@@ -69,7 +64,7 @@ try
 
     // Configure HTTP pipeline
     app.UseRouting();
-    //app.UseCors();
+    app.UseCors();
 
     // Configure API
     app.MapControllers();
@@ -85,9 +80,16 @@ try
 
     // Obsługa błędów 404 i innych
     app.UseStatusCodePages();
+    
+    // Configure metrics endpoint
+    app.UseOpenTelemetryPrometheusScrapingEndpoint();
+    
+    // Map health check endpoint
+    app.MapHealthChecks("/health");
 
     // Redirect root to docs
-    app.MapGet("/", () => Results.Redirect("/docs"));
+    app.MapGet("/", () => Results.Redirect("/docs"))
+       .ExcludeFromDescription();
     
     app.Lifetime.ApplicationStarted.Register(() =>
     {
