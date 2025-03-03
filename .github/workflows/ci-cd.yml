@@ -136,7 +136,8 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v4
       with:
-        context: .
+        context: publish/
+        file: ./Dockerfile
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -157,6 +158,8 @@ jobs:
     
     - name: Setup Pages
       uses: actions/configure-pages@v4
+      with:
+        enablement: true
     
     - name: Build documentation
       run: |
