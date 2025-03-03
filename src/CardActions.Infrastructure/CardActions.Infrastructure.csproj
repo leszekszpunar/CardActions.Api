@@ -3,6 +3,7 @@
     <ItemGroup>
         <ProjectReference Include="..\CardActions.Domain\CardActions.Domain.csproj"/>
         <ProjectReference Include="..\CardActions.Application\CardActions.Application.csproj"/>
+        <ProjectReference Include="..\CardActions.Infrastructure.Data\CardActions.Infrastructure.Data.csproj" />
     </ItemGroup>
 
     <ItemGroup>
