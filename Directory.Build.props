@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project>
     <!-- Wspólne właściwości dla wszystkich projektów -->
     <PropertyGroup>
@@ -12,6 +13,7 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- Disable warning for missing XML comments -->
         <InvariantGlobalization>false</InvariantGlobalization>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
         
         <!-- Informacje o projekcie -->
         <Authors>Leszek Szpunar</Authors>

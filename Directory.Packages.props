@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -6,7 +7,7 @@
   </PropertyGroup>
   <!-- Microsoft packages -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="8.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.2" />
@@ -16,7 +17,7 @@
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.2" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.13" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
   </ItemGroup>
   <!-- MediatR packages -->
   <ItemGroup>
@@ -49,31 +50,32 @@
   <!-- Serilog packages -->
   <ItemGroup>
     <PackageVersion Include="Serilog" Version="4.2.0" />
-    <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageVersion Include="Serilog.AspNetCore" Version="8.0.0" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="9.0.0" />
-    <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="5.0.1" />
     <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
   <!-- CSV Helper -->
   <ItemGroup>
-    <PackageVersion Include="CsvHelper" Version="33.0.1" />
+    <PackageVersion Include="CsvHelper" Version="30.0.1" />
   </ItemGroup>
   <!-- Testing packages -->
   <ItemGroup>
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <!--FLUENT ASSERTIONS ALTERNATIVES-->
-    <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2">
+    <PackageVersion Include="xunit" Version="2.6.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="Moq" Version="4.20.72" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4">
+    <PackageVersion Include="Moq" Version="4.20.69" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
     <PackageVersion Include="NetArchTest.Rules" Version="1.3.2" />
+    <PackageVersion Include="FluentAssertions" Version="6.12.0" />
   </ItemGroup>
 </Project>
