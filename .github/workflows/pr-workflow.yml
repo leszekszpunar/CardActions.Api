@@ -17,11 +17,6 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    outputs:
-      unit_tests: ${{ steps.unit_tests.outputs.tests }}
-      integration_tests: ${{ steps.integration_tests.outputs.tests }}
-      architecture_tests: ${{ steps.architecture_tests.outputs.tests }}
-      total_tests: ${{ steps.test_summary.outputs.total }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -47,125 +42,66 @@ jobs:
     - name: Build
       run: dotnet build --no-restore --configuration Release
 
-    - name: Run Unit Tests
-      id: unit_tests
+    - name: Run All Tests
+      id: test
+      timeout-minutes: 10
       run: |
-        mkdir -p ./TestResults/Unit
-        dotnet test tests/CardActions.Unit.Tests/CardActions.Unit.Tests.csproj \
-          --no-build --configuration Release \
-          --logger:"trx;LogFileName=unit-tests.trx" \
-          --results-directory ./TestResults/Unit \
-          --collect:"XPlat Code Coverage"
-        echo "tests=$(grep -o 'total="[^"]*"' ./TestResults/Unit/unit-tests.trx | head -1 | cut -d'"' -f2)" >> $GITHUB_OUTPUT
+        dotnet test \
+          --no-build \
+          --configuration Release \
+          --logger "trx;LogFileName=test-results.trx" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults
 
-    - name: Run Integration Tests
-      id: integration_tests
-      run: |
-        mkdir -p ./TestResults/Integration
-        dotnet test tests/CardActions.Integration.Tests/CardActions.Integration.Tests.csproj \
-          --no-build --configuration Release \
-          --logger:"trx;LogFileName=integration-tests.trx" \
-          --results-directory ./TestResults/Integration \
-          --collect:"XPlat Code Coverage"
-        echo "tests=$(grep -o 'total="[^"]*"' ./TestResults/Integration/integration-tests.trx | head -1 | cut -d'"' -f2)" >> $GITHUB_OUTPUT
-
-    - name: Run Architecture Tests
-      id: architecture_tests
-      run: |
-        mkdir -p ./TestResults/Architecture
-        dotnet test tests/CardActions.Architecture.Tests/CardActions.Architecture.Tests.csproj \
-          --no-build --configuration Release \
-          --logger:"trx;LogFileName=architecture-tests.trx" \
-          --results-directory ./TestResults/Architecture \
-          --collect:"XPlat Code Coverage"
-        echo "tests=$(grep -o 'total="[^"]*"' ./TestResults/Architecture/architecture-tests.trx | head -1 | cut -d'"' -f2)" >> $GITHUB_OUTPUT
-
-    - name: Generate Test Summary
-      id: test_summary
-      run: |
-        total=0
-        passed=0
-        failed=0
-        
-        for type in Unit Integration Architecture; do
-          if [ -f "./TestResults/$type/$type-tests.trx" ]; then
-            t=$(grep -o 'total="[^"]*"' "./TestResults/$type/$type-tests.trx" | head -1 | cut -d'"' -f2)
-            p=$(grep -o 'passed="[^"]*"' "./TestResults/$type/$type-tests.trx" | head -1 | cut -d'"' -f2)
-            f=$(grep -o 'failed="[^"]*"' "./TestResults/$type/$type-tests.trx" | head -1 | cut -d'"' -f2)
-            
-            total=$((total + ${t:-0}))
-            passed=$((passed + ${p:-0}))
-            failed=$((failed + ${f:-0}))
-          fi
-        done
-        
-        echo "total=$total" >> $GITHUB_OUTPUT
-        echo "passed=$passed" >> $GITHUB_OUTPUT
-        echo "failed=$failed" >> $GITHUB_OUTPUT
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      timeout-minutes: 5
+      continue-on-error: true
+      with:
+        name: .NET Tests
+        path: TestResults/*.trx
+        reporter: dotnet-trx
+        fail-on-error: true
+        only-summary: false
+        list-suites: 'all'
+        list-tests: 'all'
+        max-annotations: 50
 
     - name: Generate Code Coverage Report
-      if: success() || failure()
-      continue-on-error: true
       uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      if: success() || failure()
+      timeout-minutes: 5
+      continue-on-error: true
       with:
-        reports: '**/coverage.cobertura.xml'
+        reports: 'TestResults/**/coverage.cobertura.xml'
         targetdir: 'coveragereport'
-        reporttypes: 'HtmlInline;Cobertura;MarkdownSummaryGithub'
+        reporttypes: 'Cobertura;Html;HtmlSummary'
         title: 'CardActions.Api Coverage Report'
         tag: '${{ github.sha }}'
 
+    - name: Coverage Report
+      uses: 5monkeys/cobertura-action@master
+      timeout-minutes: 5
+      continue-on-error: true
+      with:
+        path: coveragereport/Cobertura.xml
+        minimum_coverage: 75
+        show_line: true
+        show_branch: true
+        show_class_names: true
+        show_missing: true
+        only_changed_files: true
+        report_name: 'Coverage Report'
+
     - name: Upload Test Results
       if: always()
+      timeout-minutes: 5
       continue-on-error: true
       uses: actions/upload-artifact@v4
       with:
         name: test-results
-        path: TestResults
-        retention-days: 14
-
-    - name: Upload Coverage Report
-      if: always()
-      continue-on-error: true
-      uses: actions/upload-artifact@v4
-      with:
-        name: code-coverage-report
-        path: coveragereport
-        retention-days: 14
-
-    - name: Add PR Comment
-      if: always()
-      continue-on-error: true
-      uses: marocchino/sticky-pull-request-comment@v2
-      with:
-        recreate: true
-        message: |
-          # 📊 Test Results & Coverage Report
-
-          ## Test Summary
-          - Total Tests: ${{ steps.test_summary.outputs.total }}
-          - ✅ Passed: ${{ steps.test_summary.outputs.passed }}
-          - ❌ Failed: ${{ steps.test_summary.outputs.failed }}
-
-          ### Test Categories
-          - Unit Tests: ${{ steps.unit_tests.outputs.tests }}
-          - Integration Tests: ${{ steps.integration_tests.outputs.tests }}
-          - Architecture Tests: ${{ steps.architecture_tests.outputs.tests }}
-
-          <details>
-          <summary>📋 Coverage Report</summary>
-          
-          ```
-          $(cat coveragereport/Summary.md)
-          ```
-          
-          </details>
-
-          ### Reports & Artifacts
-          - [Test Results](${{ github.event.pull_request.html_url }}/checks?check_run_id=${{ github.run_id }})
-          - [Coverage Report](${{ github.event.pull_request.html_url }}/artifacts)
-          
-          ### Requirements
-          - Minimum required coverage: 60%
-          - Target coverage: 80%
-          
-          ${steps.test_summary.outputs.failed != '0' && '⚠️ **WARNING**: Some tests failed! Check the "Checks" tab for details.' || '✅ All tests passed successfully!'} 
+        path: |
+          TestResults
+          coveragereport
+        retention-days: 14 
