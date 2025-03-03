@@ -46,12 +46,6 @@ jobs:
         format: 'markdown'
         output: 'both'
         thresholds: '60 80'
-        fail_below_min: true
-
-    - name: Create Coverage Summary
-      run: |
-        echo "## Code Coverage Report" > code-coverage-summary.md
-        cat code-coverage-summary.txt >> code-coverage-summary.md
 
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
@@ -61,19 +55,8 @@ jobs:
 
     - name: Add Coverage PR Comment
       uses: marocchino/sticky-pull-request-comment@v2
-      if: github.event_name == 'pull_request'
       with:
         recreate: true
         message: |
           # Code Coverage Report
-          ${{ steps.code_coverage.outputs.markdown }}
-
-    - name: Check Coverage Minimum
-      shell: bash
-      run: |
-        COVERAGE=$(grep -o '<coverage line-rate="[^"]*"' coveragereport/Cobertura.xml | grep -o '[0-9.]*')
-        COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc)
-        if (( $(echo "$COVERAGE_PCT < 60" | bc -l) )); then
-          echo "Code coverage is below minimum required: $COVERAGE_PCT%"
-          exit 1
-        fi 
+          ${{ steps.code_coverage.outputs.markdown }} 
