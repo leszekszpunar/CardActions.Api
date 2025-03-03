@@ -11,6 +11,10 @@ using Serilog;
 using System.Globalization;
 using CardActions.Api.Middleware;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.Hosting.Server;
+using CardActions.Application.Common.Interfaces;
+using CardActions.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var logger = Log.ForContext<Program>();
@@ -36,6 +40,20 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddInfrastructureData();
 
+    // Add localization service
+    builder.Services.AddSingleton<ILocalizationService, StringLocalizerWrapper>();
+
+    // // Configure CORS
+    // builder.Services.AddCors(options =>
+    // {
+    //     options.AddDefaultPolicy(policy =>
+    //     {
+    //         policy.AllowAnyOrigin()
+    //               .AllowAnyHeader()
+    //               .AllowAnyMethod();
+    //     });
+    // });
+
     // Configure API
     //builder.Services.AddApiConfiguration();
     builder.Services.AddRateLimitingConfiguration();
@@ -48,6 +66,10 @@ try
     builder.Services.AddLocalizationConfiguration();
 
     var app = builder.Build();
+
+    // Configure HTTP pipeline
+    app.UseRouting();
+    //app.UseCors();
 
     // Configure API
     app.MapControllers();
@@ -63,12 +85,22 @@ try
 
     // Obsługa błędów 404 i innych
     app.UseStatusCodePages();
+
+    // Redirect root to docs
+    app.MapGet("/", () => Results.Redirect("/docs"));
     
-    logger.Information("CardActions.Api application started successfully");
-    logger.Information("ReDoc documentation available at: http://localhost:5003/docs");
-    logger.Information("Swagger UI available at: http://localhost:5003/swagger");
-    logger.Information("Health check endpoint available at: http://localhost:5003/health");
-    logger.Information("Prometheus metrics available at: http://localhost:5003/metrics");
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        var addresses = app.Services.GetService<IServer>()?.Features?.Get<IServerAddressesFeature>()?.Addresses;
+        var baseUrl = addresses?.FirstOrDefault() ?? "http://localhost:8080";
+        
+        logger.Information("CardActions.Api application started successfully");
+        logger.Information("Base URL: {BaseUrl}", baseUrl);
+        logger.Information("ReDoc documentation available at: {BaseUrl}/docs", baseUrl);
+        logger.Information("Swagger UI available at: {BaseUrl}/swagger", baseUrl);
+        logger.Information("Health check endpoint available at: {BaseUrl}/health", baseUrl);
+        logger.Information("Prometheus metrics available at: {BaseUrl}/metrics", baseUrl);
+    });
 
     app.Run();
 }
