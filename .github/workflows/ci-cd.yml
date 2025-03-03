@@ -149,6 +149,11 @@ jobs:
     needs: release
     if: needs.release.outputs.version != ''
     runs-on: ubuntu-latest
+    # Add specific permissions for this job
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
       url: https://${{ env.GITHUB_PAGES_URL }}/${{ env.REPOSITORY_NAME }}/${{ github.ref == 'refs/heads/main' && '' || 'dev' }}
@@ -160,6 +165,7 @@ jobs:
       uses: actions/configure-pages@v4
       with:
         enablement: true
+        token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Build documentation
       run: |
