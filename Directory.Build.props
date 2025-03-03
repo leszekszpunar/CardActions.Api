@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+    <!-- Wspólne właściwości dla wszystkich projektów -->
+    <PropertyGroup>
+        <Version>0.0.0</Version>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- Disable warning for missing XML comments -->
+        <InvariantGlobalization>false</InvariantGlobalization>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        
+        <!-- Informacje o projekcie -->
+        <Authors>Leszek Szpunar</Authors>
+        <Company>IT</Company>
+        <Product>Card Actions API</Product>
+        <Description>API do zarządzania akcjami dla kart płatniczych</Description>
+        <PackageTags>cards;actions;api</PackageTags>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/leszekszpunar/CardActions.Api</RepositoryUrl>
+    </PropertyGroup>
+
+    <!-- Wspólne właściwości dla projektów API -->
+    <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Api'))">
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IncludeOpenAPIAnalyzers>true</IncludeOpenAPIAnalyzers>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
+    </PropertyGroup>
+
+    <!-- Wspólne właściwości dla projektów testowych -->
+    <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <PreserveCompilationContext>true</PreserveCompilationContext>
+        <CollectCoverage>true</CollectCoverage>
+        <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+    </PropertyGroup>
+</Project> 

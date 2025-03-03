@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    
+    <PropertyGroup>
+        <EnableDefaultContentItems>false</EnableDefaultContentItems>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="OpenTelemetry"/>
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore"/>
+        <PackageReference Include="NSwag.Annotations"/>
+        <PackageReference Include="NSwag.AspNetCore"/>
+        <PackageReference Include="NSwag.Core"/>
+        <PackageReference Include="OpenTelemetry.Api"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Process"/>
+        <PackageReference Include="Serilog"/>
+        <PackageReference Include="MediatR"/>
+        <PackageReference Include="MediatR.Contracts"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\CardActions.Application\CardActions.Application.csproj"/>
+        <ProjectReference Include="..\CardActions.Infrastructure.Data\CardActions.Infrastructure.Data.csproj" />
+        <ProjectReference Include="..\CardActions.Infrastructure\CardActions.Infrastructure.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="Resources\**\*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Include="appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Include="appsettings.*.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+</Project> 

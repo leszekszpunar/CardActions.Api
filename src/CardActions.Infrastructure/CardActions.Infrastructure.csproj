@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <ItemGroup>
+        <ProjectReference Include="..\CardActions.Domain\CardActions.Domain.csproj"/>
+        <ProjectReference Include="..\CardActions.Application\CardActions.Application.csproj"/>
+        <ProjectReference Include="..\CardActions.Infrastructure.Data\CardActions.Infrastructure.Data.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"/>
+
+        <PackageReference Include="Serilog.AspNetCore"/>
+        <PackageReference Include="Serilog.Enrichers.Environment"/>
+        <PackageReference Include="Serilog.Enrichers.Thread"/>
+        <PackageReference Include="Serilog.Extensions.Logging"/>
+        <PackageReference Include="Serilog.Sinks.Console"/>
+        <PackageReference Include="Serilog.Sinks.File"/>
+        
+        <PackageReference Include="CsvHelper"/>
+    </ItemGroup>
+
+</Project> 
