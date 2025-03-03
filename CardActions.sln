@@ -23,6 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "items", "items", "{CAD8CCBE
 		global.json = global.json
 		docker-compose.yml = docker-compose.yml
 		Dockerfile = Dockerfile
+		.releaserc.json = .releaserc.json
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Architecture.Tests", "tests\CardActions.Architecture.Tests\CardActions.Architecture.Tests.csproj", "{C6F53F80-13AC-4285-B54D-6F198AA28B12}"
@@ -30,6 +31,16 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Unit.Tests", "tests\CardActions.Unit.Tests\CardActions.Unit.Tests.csproj", "{109D9151-4F61-410A-B69C-F45EA9CC4DAE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Integration.Tests", "tests\CardActions.Integration.Tests\CardActions.Integration.Tests.csproj", "{D098E58B-B833-4F77-B369-11D71000BBA9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{393A33B1-22EA-49CD-8CA2-E56BA1413544}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\ci-cd.yml = .github\workflows\ci-cd.yml
+		.github\workflows\dev-deploy.yml = .github\workflows\dev-deploy.yml
+		.github\workflows\pr-workflow.yml = .github\workflows\pr-workflow.yml
+		.github\workflows\prod-deploy.yml = .github\workflows\prod-deploy.yml
+		.github\workflows\release.yml = .github\workflows\release.yml
+		.github\README.md = .github\README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -82,5 +93,6 @@ Global
 		{C6F53F80-13AC-4285-B54D-6F198AA28B12} = {AF7FE797-D4F1-4927-AD3D-890B9DF93FF5}
 		{109D9151-4F61-410A-B69C-F45EA9CC4DAE} = {AF7FE797-D4F1-4927-AD3D-890B9DF93FF5}
 		{D098E58B-B833-4F77-B369-11D71000BBA9} = {AF7FE797-D4F1-4927-AD3D-890B9DF93FF5}
+		{393A33B1-22EA-49CD-8CA2-E56BA1413544} = {CAD8CCBE-930C-49BE-A278-7EC049D37283}
 	EndGlobalSection
 EndGlobal
