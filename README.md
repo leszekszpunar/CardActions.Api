@@ -17,7 +17,7 @@ src/
 tests/
 ├── CardActions.Unit.Tests
 ├── CardActions.Integration.Tests
-└── CardActions.Architecture.Tests   # Testy architektury
+└── CardActions.Architecture.Tests
 ```
 
 ### 🔑 Kluczowe cechy
