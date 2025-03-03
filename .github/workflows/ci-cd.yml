@@ -15,8 +15,17 @@ permissions:
   pull-requests: write
   packages: write
   id-token: write
+  pages: write
+  deployments: write
+
+# Konfiguracja środowiska
+env:
+  DOCS_PATH: 'docs'
+  GITHUB_PAGES_URL: '${{ github.repository_owner }}.github.io'
+  REPOSITORY_NAME: '${{ github.event.repository.name }}'
 
 jobs:
+  # 1. Build i testy
   build:
     runs-on: ubuntu-latest
     outputs:
@@ -31,34 +40,58 @@ jobs:
       with:
         dotnet-version: 8.0.x
     
-    - name: Semantic Release
-      id: semantic
-      uses: cycjimmy/semantic-release-action@v4
-      with:
-        extra_plugins: |
-          @semantic-release/changelog
-          @semantic-release/git
-        branch: ${{ github.ref_name }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build
+    - name: Build and Test
       run: |
         dotnet restore
         dotnet build --no-restore --configuration Release
+        dotnet test --no-build --configuration Release
         dotnet publish src/CardActions.Api/CardActions.Api.csproj -c Release -o publish
 
-    - name: Upload artifact
+    - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
         name: api-artifact
         path: publish/
+        retention-days: 1
 
-  docker:
+  # 2. Semantic Release
+  release:
     needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semantic.outputs.new_release_version }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 'lts/*'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Semantic Release
+      id: semantic
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: npx semantic-release
+
+  # 3. Build i push Docker image
+  docker:
+    needs: [build, release]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: api-artifact
+        path: publish/
     
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
@@ -76,9 +109,22 @@ jobs:
       with:
         images: ghcr.io/${{ github.repository }}/cardactions-api
         tags: |
-          type=raw,value=${{ needs.build.outputs.version }},enable=${{ needs.build.outputs.version != '' }}
+          type=semver,pattern={{version}},enable=${{ needs.release.outputs.version != '' }}
+          type=semver,pattern={{major}}.{{minor}},enable=${{ needs.release.outputs.version != '' }}
+          type=sha,prefix=sha-,format=short
           type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-          type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
+          type=raw,value=beta,enable=${{ github.ref == 'refs/heads/develop' }}
+          type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+        flavor: |
+          latest=false
+          prefix=
+          suffix=
+        labels: |
+          org.opencontainers.image.title=CardActions API
+          org.opencontainers.image.description=Card Actions API for Millennium Project
+          org.opencontainers.image.version=${{ needs.release.outputs.version }}
+          org.opencontainers.image.created={{date 'YYYY-MM-DDTHH:mm:ssZ'}}
+          org.opencontainers.image.revision=${{ github.sha }}
     
     - name: Build and push
       uses: docker/build-push-action@v4
@@ -90,40 +136,77 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-  deploy-dev:
-    if: github.ref == 'refs/heads/develop'
-    needs: docker
+  # 4. Deploy dokumentacji do GitHub Pages
+  deploy-docs:
+    needs: [release]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+      url: https://${{ env.GITHUB_PAGES_URL }}/${{ env.REPOSITORY_NAME }}/${{ github.ref == 'refs/heads/main' && '' || 'dev' }}
     steps:
     - uses: actions/checkout@v4
     
-    - name: Create deployment package
-      run: |
-        mkdir -p deploy
-        cp docker-compose.yml deploy/
-        echo "DOCKER_IMAGE=ghcr.io/${{ github.repository }}/cardactions-api:develop" > deploy/.env
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
     
-    - name: Upload deployment package
-      uses: actions/upload-artifact@v4
+    - name: Build documentation
+      run: |
+        mkdir -p docs-build
+        # Kopiujemy dokumentację do odpowiedniego katalogu (main lub dev)
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          cp -r ${{ env.DOCS_PATH }}/* docs-build/
+        else
+          mkdir -p docs-build/dev
+          cp -r ${{ env.DOCS_PATH }}/* docs-build/dev/
+        fi
+        
+        # Generujemy plik konfiguracyjny z URL-ami
+        cat > docs-build/config.json << EOF
+        {
+          "env": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
+          "version": "${{ needs.release.outputs.version }}",
+          "apiUrl": "https://ghcr.io/${{ github.repository }}/cardactions-api:${{ github.ref == 'refs/heads/main' && 'latest' || 'beta' }}"
+        }
+        EOF
+    
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        name: deploy-dev
-        path: deploy/
+        path: docs-build
+    
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
 
-  deploy-prod:
-    if: github.ref == 'refs/heads/main'
-    needs: [build, docker]
+  # 5. Deploy demo do GitHub Container Registry
+  deploy-demo:
+    needs: [docker, release]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+      url: https://ghcr.io/${{ github.repository }}/cardactions-api:${{ github.ref == 'refs/heads/main' && 'latest' || 'beta' }}
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Create deployment package
+    - name: Create GitHub Environment Variables
       run: |
-        mkdir -p deploy
-        cp docker-compose.yml deploy/
-        echo "DOCKER_IMAGE=ghcr.io/${{ github.repository }}/cardactions-api:${{ needs.build.outputs.version }}" > deploy/.env
+        # Ustawiamy zmienne środowiskowe dla GitHub Environment
+        echo "DOCKER_IMAGE=ghcr.io/${{ github.repository }}/cardactions-api:${{ github.ref == 'refs/heads/main' && needs.release.outputs.version || 'beta' }}" >> $GITHUB_ENV
+        echo "DEPLOYMENT_URL=https://${{ env.GITHUB_PAGES_URL }}/${{ env.REPOSITORY_NAME }}/${{ github.ref == 'refs/heads/main' && '' || 'dev' }}" >> $GITHUB_ENV
+        
+        # Tworzymy plik z konfiguracją deploymentu
+        cat > deployment.json << EOF
+        {
+          "version": "${{ needs.release.outputs.version }}",
+          "environment": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
+          "dockerImage": "${{ env.DOCKER_IMAGE }}",
+          "docsUrl": "${{ env.DEPLOYMENT_URL }}"
+        }
+        EOF
     
-    - name: Upload deployment package
+    - name: Upload Deployment Config
       uses: actions/upload-artifact@v4
       with:
-        name: deploy-prod
-        path: deploy/ 
+        name: deployment-config
+        path: deployment.json
+        retention-days: 30 
