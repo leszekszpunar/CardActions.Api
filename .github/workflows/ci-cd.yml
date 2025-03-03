@@ -83,7 +83,10 @@ jobs:
       id: semantic
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npx semantic-release
+      run: |
+        npx semantic-release
+        VERSION=$(git describe --tags --abbrev=0)
+        echo "new_release_version=${VERSION#v}" >> $GITHUB_OUTPUT
 
   # 3. Build i push Docker image
   docker:
