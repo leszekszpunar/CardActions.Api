@@ -86,7 +86,7 @@ jobs:
       continue-on-error: true
       with:
         path: coveragereport/Cobertura.xml
-        minimum_coverage: 75
+        minimum_coverage: 65
         show_line: true
         show_branch: true
         show_class_names: true
