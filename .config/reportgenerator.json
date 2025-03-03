@@ -1,0 +1,39 @@
+{
+  "reportTypes": [
+    "Html",
+    "HtmlSummary",
+    "MarkdownSummary",
+    "TextSummary",
+    "Badges"
+  ],
+  "settings": {
+    "title": "CardActions.Api Coverage Report",
+    "tag": "${{ github.sha }}",
+    "customSettings": {
+      "createSubdirectoryForAllReportTypes": true,
+      "markdownAutoLinks": true,
+      "enableCyclomaticComplexityTracking": true,
+      "verbosity": "Verbose",
+      "numberOfReportsParsedInParallel": 4,
+      "numberOfReportsMergedInParallel": 4
+    }
+  },
+  "badges": [
+    {
+      "filename": "badge_combined.svg",
+      "type": "Combined"
+    },
+    {
+      "filename": "badge_branchcoverage.svg",
+      "type": "BranchCoverage"
+    },
+    {
+      "filename": "badge_linecoverage.svg",
+      "type": "LineCoverage"
+    },
+    {
+      "filename": "badge_methodcoverage.svg",
+      "type": "MethodCoverage"
+    }
+  ]
+} 
