@@ -1,24 +1,35 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - '**/*.md'
-      - '.gitignore'
-      - '.editorconfig'
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
+    branches: [main]
 
 jobs:
   build-test-deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: main
+        fetch-depth: 0
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+    
+    - name: Get latest tag
+      id: get_version
+      run: |
+        git fetch --tags
+        VERSION=$(git describe --tags --abbrev=0)
+        echo "Latest tag: $VERSION"
+        echo "VERSION=${VERSION#v}" >> $GITHUB_ENV
     
     - name: Restore dependencies
       run: dotnet restore CardActions.Api/CardActions.sln
@@ -45,11 +56,8 @@ jobs:
       with:
         images: ghcr.io/${{ github.repository }}/cardactions-api
         tags: |
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=sha,format=short
-          latest
+          type=raw,value=${{ env.VERSION }}
+          type=raw,value=latest
     
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
@@ -58,13 +66,15 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          VERSION=${{ env.VERSION }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
     
     - name: Update Kubernetes deployment file
       run: |
-        # Zastąp placeholder w pliku deployment.yaml rzeczywistą nazwą repozytorium
-        sed -i "s|ghcr.io/OWNER/REPO/cardactions-api|ghcr.io/${{ github.repository }}/cardactions-api|g" CardActions.Api/k8s/prod/deployment.yaml
+        # Zastąp placeholder w pliku deployment.yaml rzeczywistą nazwą repozytorium i wersją
+        sed -i "s|ghcr.io/OWNER/REPO/cardactions-api|ghcr.io/${{ github.repository }}/cardactions-api:${{ env.VERSION }}|g" CardActions.Api/k8s/prod/deployment.yaml
     
     - name: Set up kubeconfig
       uses: azure/k8s-set-context@v3
@@ -82,5 +92,5 @@ jobs:
         
     - name: Notify Deployment Status
       run: |
-        echo "Deployment to Production Environment completed"
+        echo "Deployment to Production Environment completed - version ${{ env.VERSION }}"
         # Tutaj możesz dodać powiadomienia, np. przez Slack, Teams, itp. 
