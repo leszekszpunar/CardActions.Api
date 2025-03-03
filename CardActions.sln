@@ -35,10 +35,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{393A33B1-22EA-49CD-8CA2-E56BA1413544}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\ci-cd.yml = .github\workflows\ci-cd.yml
-		.github\workflows\dev-deploy.yml = .github\workflows\dev-deploy.yml
 		.github\workflows\pr-workflow.yml = .github\workflows\pr-workflow.yml
-		.github\workflows\prod-deploy.yml = .github\workflows\prod-deploy.yml
-		.github\workflows\release.yml = .github\workflows\release.yml
 		.github\README.md = .github\README.md
 	EndProjectSection
 EndProject
