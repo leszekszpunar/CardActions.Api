@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -48,11 +50,18 @@ jobs:
           --results-directory:./coverage \
           --logger:"html;LogFileName=test-results.html" \
           --logger:"trx;LogFileName=test-results.trx" \
+          --logger:"console;verbosity=detailed" \
+          --blame-hang-timeout 60s \
+          --blame-crash \
+          --diag:test-diagnostics.log \
           /p:CollectCoverage=true \
           /p:CoverletOutputFormat=cobertura \
           /p:CoverletOutput=./coverage/ \
           /p:Include="[*]*" \
-          /p:Exclude="[*.Tests]*"
+          /p:Exclude="[*.Tests]*" \
+          /p:ExcludeByAttribute="GeneratedCodeAttribute" \
+          /p:SkipAutoProps=true \
+          /p:UseSourceLink=true
         
     - name: Generate Code Coverage Report
       if: success() || failure()
@@ -61,9 +70,10 @@ jobs:
       with:
         reports: 'coverage/**/coverage.cobertura.xml'
         targetdir: 'coveragereport'
-        reporttypes: 'HtmlInline;Cobertura;MarkdownSummaryGithub;TeamCitySummary'
+        reporttypes: 'HtmlInline;Cobertura;MarkdownSummaryGithub;TeamCitySummary;TextSummary;Badges'
         title: 'CardActions.Api Coverage Report'
         tag: '${{ github.sha }}'
+        verbosity: 'Verbose'
         
     - name: Check coverage
       if: success() || failure()
@@ -87,6 +97,11 @@ jobs:
           coverage/**/test-results.trx
         report_individual_runs: true
         check_name: "Test Results"
+        compare_to_earlier_commit: true
+        test_changes_limit: 0
+        pull_request_build: "commit"
+        event_file: ${{ github.event_path }}
+        event_name: ${{ github.event_name }}
 
     - name: Create Test Report
       if: always()
@@ -97,6 +112,80 @@ jobs:
         path: 'coverage/**/test-results.trx'
         reporter: dotnet-trx
         fail-on-error: false
+        max-annotations: 50
+        only-summary: false
+
+    - name: Process Test Results
+      if: always()
+      id: test_results
+      run: |
+        echo "summary<<EOF" >> $GITHUB_OUTPUT
+        echo "### Test Execution Summary" >> $GITHUB_OUTPUT
+        echo "\`\`\`" >> $GITHUB_OUTPUT
+        
+        # Use trx file directly for more accurate results
+        TOTAL_TESTS=$(grep -o 'total="[^"]*"' coverage/**/test-results.trx | head -1 | cut -d'"' -f2)
+        PASSED_TESTS=$(grep -o 'passed="[^"]*"' coverage/**/test-results.trx | head -1 | cut -d'"' -f2)
+        FAILED_TESTS=$(grep -o 'failed="[^"]*"' coverage/**/test-results.trx | head -1 | cut -d'"' -f2)
+        SKIPPED_TESTS=$(grep -o 'skipped="[^"]*"' coverage/**/test-results.trx | head -1 | cut -d'"' -f2)
+        
+        echo "Total Tests: $TOTAL_TESTS" >> $GITHUB_OUTPUT
+        echo "✅ Passed:    $PASSED_TESTS" >> $GITHUB_OUTPUT
+        echo "❌ Failed:    ${FAILED_TESTS:-0}" >> $GITHUB_OUTPUT
+        echo "⏭️ Skipped:   ${SKIPPED_TESTS:-0}" >> $GITHUB_OUTPUT
+        echo "\`\`\`" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        # Extract test duration and format it
+        DURATION=$(grep -o 'duration="[^"]*"' coverage/**/test-results.trx | head -1 | cut -d'"' -f2)
+        if [[ $DURATION =~ ([0-9]+):([0-9]+):([0-9]+) ]]; then
+          HOURS=${BASH_REMATCH[1]}
+          MINS=${BASH_REMATCH[2]}
+          SECS=${BASH_REMATCH[3]}
+          if [ "$HOURS" != "00" ]; then
+            FORMATTED_DURATION="${HOURS}h ${MINS}m ${SECS}s"
+          elif [ "$MINS" != "00" ]; then
+            FORMATTED_DURATION="${MINS}m ${SECS}s"
+          else
+            FORMATTED_DURATION="${SECS}s"
+          fi
+        else
+          FORMATTED_DURATION=$DURATION
+        fi
+        echo "duration=$FORMATTED_DURATION" >> $GITHUB_OUTPUT
+        
+        # Count test categories and get detailed stats
+        echo "detailed_summary<<EOF" >> $GITHUB_OUTPUT
+        echo "Test Categories:" >> $GITHUB_OUTPUT
+        
+        # Unit Tests
+        UNIT_TESTS=$(grep -c 'TestCategory="Unit"' coverage/**/test-results.trx || echo "0")
+        UNIT_PASSED=$(grep 'TestCategory="Unit"' coverage/**/test-results.trx | grep -c 'outcome="Passed"' || echo "0")
+        UNIT_FAILED=$(grep 'TestCategory="Unit"' coverage/**/test-results.trx | grep -c 'outcome="Failed"' || echo "0")
+        echo "- Unit Tests: $UNIT_TESTS (✅ $UNIT_PASSED passed, ❌ $UNIT_FAILED failed)" >> $GITHUB_OUTPUT
+        
+        # Integration Tests
+        INTEGRATION_TESTS=$(grep -c 'TestCategory="Integration"' coverage/**/test-results.trx || echo "0")
+        INTEGRATION_PASSED=$(grep 'TestCategory="Integration"' coverage/**/test-results.trx | grep -c 'outcome="Passed"' || echo "0")
+        INTEGRATION_FAILED=$(grep 'TestCategory="Integration"' coverage/**/test-results.trx | grep -c 'outcome="Failed"' || echo "0")
+        echo "- Integration Tests: $INTEGRATION_TESTS (✅ $INTEGRATION_PASSED passed, ❌ $INTEGRATION_FAILED failed)" >> $GITHUB_OUTPUT
+        
+        # Architecture Tests
+        ARCH_TESTS=$(grep -c 'TestCategory="Architecture"' coverage/**/test-results.trx || echo "0")
+        ARCH_PASSED=$(grep 'TestCategory="Architecture"' coverage/**/test-results.trx | grep -c 'outcome="Passed"' || echo "0")
+        ARCH_FAILED=$(grep 'TestCategory="Architecture"' coverage/**/test-results.trx | grep -c 'outcome="Failed"' || echo "0")
+        echo "- Architecture Tests: $ARCH_TESTS (✅ $ARCH_PASSED passed, ❌ $ARCH_FAILED failed)" >> $GITHUB_OUTPUT
+        
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        # Save category counts for the comment
+        echo "unit_tests=$UNIT_TESTS" >> $GITHUB_OUTPUT
+        echo "integration_tests=$INTEGRATION_TESTS" >> $GITHUB_OUTPUT
+        echo "arch_tests=$ARCH_TESTS" >> $GITHUB_OUTPUT
+        echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+        echo "passed_tests=$PASSED_TESTS" >> $GITHUB_OUTPUT
+        echo "failed_tests=${FAILED_TESTS:-0}" >> $GITHUB_OUTPUT
+        echo "skipped_tests=${SKIPPED_TESTS:-0}" >> $GITHUB_OUTPUT
 
     - name: Upload Test Results
       if: always()
@@ -107,6 +196,7 @@ jobs:
         path: |
           coverage/**/test-results.html
           coverage/**/test-results.trx
+          test-diagnostics.log
         retention-days: 14
 
     - name: Upload Coverage Report
@@ -129,6 +219,14 @@ jobs:
           cat "$SUMMARY_FILE" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         fi
+        
+        # Extract text summary for more details
+        TEXT_SUMMARY=$(find coveragereport -name "Summary.txt" -type f)
+        if [ -f "$TEXT_SUMMARY" ]; then
+          echo "detailed_summary<<EOF" >> $GITHUB_OUTPUT
+          cat "$TEXT_SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
 
     - name: Add Coverage PR Comment
       if: always()
@@ -139,17 +237,38 @@ jobs:
         message: |
           # 📊 Test Results & Coverage Report
 
-          ## Coverage Summary
+          ## 🧪 Test Execution Summary
+          ${{ steps.test_results.outputs.summary }}
+          
+          ### Test Categories
+          ```
+          ${{ steps.test_results.outputs.detailed_summary }}
+          ```
+          
+          Total Tests: ${{ steps.test_results.outputs.total_tests }}
+          ✅ Passed: ${{ steps.test_results.outputs.passed_tests }}
+          ❌ Failed: ${{ steps.test_results.outputs.failed_tests }}
+          ⏭️ Skipped: ${{ steps.test_results.outputs.skipped_tests }}
+          ⏱️ Duration: ${{ steps.test_results.outputs.duration }}
+
+          ## 📈 Coverage Summary
           ${{ steps.code_coverage.outputs.markdown }}
 
-          ## Detailed Coverage Report
-          ${{ steps.coverage_summary.outputs.summary_content }}
+          <details>
+          <summary>📋 Detailed Coverage Report</summary>
+          
+          ```
+          ${{ steps.coverage_summary.outputs.detailed_summary }}
+          ```
+          
+          </details>
 
           ## 🔍 Test Results
           - Full test results are available in the "Checks" tab
           - Detailed HTML report is available in artifacts
+          - Test diagnostics log is available in artifacts
           
-          ### 📈 Requirements
+          ### 📊 Requirements
           - Minimum required coverage: 60%
           - Target coverage: 80%
           
@@ -157,5 +276,6 @@ jobs:
           - [Test Results Report](${{ github.event.pull_request.html_url }}/checks?check_run_id=${{ github.run_id }})
           - [Coverage Report (HTML)](${{ github.event.pull_request.html_url }}/artifacts)
           - [Test Results (TRX)](${{ github.event.pull_request.html_url }}/artifacts)
+          - [Test Diagnostics Log](${{ github.event.pull_request.html_url }}/artifacts)
           
           ${steps.tests.outcome == 'failure' && '⚠️ **WARNING**: Tests failed! Check the "Checks" tab for details.' || '✅ All tests passed successfully!'} 
