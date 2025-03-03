@@ -9,6 +9,13 @@ on:
       - '.editorconfig'
       - 'docs/**'
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  packages: write
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
