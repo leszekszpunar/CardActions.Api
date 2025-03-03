@@ -16,7 +16,8 @@ src/
 
 tests/
 ├── CardActions.Unit.Tests
-└── CardActions.Integration.Tests
+├── CardActions.Integration.Tests
+└── CardActions.Architecture.Tests   # Testy architektury
 ```
 
 ### 🔑 Kluczowe cechy
@@ -28,7 +29,7 @@ tests/
 - **OpenAPI/Swagger** - automatyczna dokumentacja API
 - **Monitoring** - OpenTelemetry, Prometheus, health checks
 - **Logowanie** - ustrukturyzowane logi z wykorzystaniem Serilog
-- **Testy** - unit testy i testy integracyjne
+- **Testy** - unit testy, testy integracyjne i testy architektury
 - **CI/CD** - automatyczny pipeline z semantic versioning
 
 ## 🚀 Deployment
@@ -79,3 +80,21 @@ Projekt używa conventional commits do automatycznego wersjonowania:
 - `GET /metrics` - metryki Prometheus
 - `/docs` - dokumentacja API (ReDoc)
 - `/swagger` - Swagger UI
+
+## 🧪 Testy
+
+Projekt zawiera trzy rodzaje testów:
+
+### Unit Testy
+Testy jednostkowe sprawdzające logikę biznesową i komponenty w izolacji.
+
+### Testy Integracyjne
+Testy weryfikujące współpracę między komponentami i integrację z zewnętrznymi systemami.
+
+### Testy Architektury
+Automatyczne testy weryfikujące zgodność z założeniami architektonicznymi:
+- Poprawność zależności między warstwami
+- Zgodność z konwencjami nazewniczymi
+- Prawidłowe użycie wzorców (CQRS, Clean Architecture)
+- Spójność konfiguracji projektów
+- Weryfikacja wersji pakietów NuGet
