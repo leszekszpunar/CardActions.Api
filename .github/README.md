@@ -3,6 +3,7 @@
 ## Wymagania
 - [act](https://github.com/nektos/act) - narzędzie do lokalnego testowania GitHub Actions
 - Docker
+- [ReportGenerator](https://github.com/danielpalme/ReportGenerator) - dla generowania raportów pokrycia kodu
 
 ## Instalacja act
 ```bash
@@ -11,6 +12,9 @@ brew install act
 
 # Linux
 curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+
+# Instalacja ReportGenerator (opcjonalnie dla lokalnych testów)
+dotnet tool install -g dotnet-reportgenerator-globaltool
 ```
 
 ## Testowanie workflowów
@@ -51,6 +55,31 @@ act push -j docker -n --container-architecture linux/amd64
 act push -j deploy-docs -n --container-architecture linux/amd64
 act push -j deploy-demo -n --container-architecture linux/amd64
 ```
+
+## Raporty i artefakty
+
+### Raporty z testów
+Po wykonaniu testów, generowane są następujące raporty:
+- Wyniki testów w formacie TRX (`test-results.trx`)
+- Raport pokrycia kodu w formacie Cobertura XML
+- Raport HTML z wizualizacją pokrycia
+- Znaczki (badges) pokazujące statystyki pokrycia
+- Podsumowanie w formacie Markdown
+
+### Lokalizacja raportów
+- `/coverage` - surowe dane pokrycia
+- `/coveragereport` - przetworzone raporty
+  - `Summary.md` - podsumowanie w Markdown
+  - `index.html` - interaktywny raport HTML
+  - `badges/` - znaczki z metrykami
+
+### Automatyczne komentarze w PR
+Dla każdego Pull Requesta automatycznie generowany jest komentarz zawierający:
+- Wyniki testów (passed/failed)
+- Statystyki pokrycia kodu
+- Porównanie z gałęzią docelową
+- Metryki złożoności cyklomatycznej
+- Linki do szczegółowych raportów
 
 ## Ważne uwagi
 1. Parametr `--container-architecture linux/amd64` jest wymagany dla komputerów z procesorami Apple Silicon (M1/M2).
@@ -101,4 +130,13 @@ act push -j deploy-demo -n --container-architecture linux/amd64
    ```bash
    # Przed uruchomieniem testu
    docker buildx create --use
+   ```
+
+5. Jeśli raporty nie są generowane:
+   ```bash
+   # Sprawdź czy ReportGenerator jest zainstalowany
+   dotnet tool install -g dotnet-reportgenerator-globaltool
+   
+   # Ręczne wygenerowanie raportu
+   reportgenerator -reports:"coverage/**/coverage.cobertura.xml" -targetdir:"coveragereport" -reporttypes:"MarkdownSummary;Html;Badges"
    ``` 

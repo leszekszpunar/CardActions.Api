@@ -144,4 +144,17 @@ jobs:
           - HTML Report: Dostępny w artifacts (test-results.html)
           - TRX Report: Dostępny w artifacts (test-results.trx)
           
-          ${steps.tests.outcome == 'failure' && '⚠️ **UWAGA**: Testy nie przeszły! Sprawdź szczegóły w zakładce "Checks".' || ''} 
+          ${steps.tests.outcome == 'failure' && '⚠️ **UWAGA**: Testy nie przeszły! Sprawdź szczegóły w zakładce "Checks".' || ''}
+
+    - name: Find Coverage File
+      id: coverage
+      run: |
+        COVERAGE_FILE=$(find coveragereport -name "Summary.md" -type f)
+        echo "file=$COVERAGE_FILE" >> $GITHUB_OUTPUT
+
+    - name: Create Coverage Comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: test-coverage
+        path: ${{ steps.coverage.outputs.file }}
+        recreate: true 
