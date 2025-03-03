@@ -1,3 +1,10 @@
+# [1.0.0-beta.4](https://github.com/leszekszpunar/CardActions.Api/compare/v1.0.0-beta.3...v1.0.0-beta.4) (2025-03-03)
+
+
+### Features
+
+* **CI/CD:** Add permissions for GitHub Pages deployment job ([#9](https://github.com/leszekszpunar/CardActions.Api/issues/9)) ([707d3ef](https://github.com/leszekszpunar/CardActions.Api/commit/707d3efc11552a15d5cb34f420a7177e72d37a6c))
+
 # [1.0.0-beta.3](https://github.com/leszekszpunar/CardActions.Api/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2025-03-03)
 
 
