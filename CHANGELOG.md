@@ -1,3 +1,10 @@
+# [1.0.0-beta.3](https://github.com/leszekszpunar/CardActions.Api/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2025-03-03)
+
+
+### Features
+
+* **Docker:** Update Dockerfile for non-root user and context adjustments ([#8](https://github.com/leszekszpunar/CardActions.Api/issues/8)) ([aa4ff30](https://github.com/leszekszpunar/CardActions.Api/commit/aa4ff30a31548a48f8216dcd593c5631fa360e31))
+
 # [1.0.0-beta.2](https://github.com/leszekszpunar/CardActions.Api/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2025-03-03)
 
 
