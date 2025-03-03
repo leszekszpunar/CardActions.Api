@@ -16,11 +16,22 @@ public class PackageVersionTests
     {
         _output = output;
         
-        // Bezpośrednia ścieżka do Directory.Packages.props
-        _directoryPackagesPropsPath = "/Users/leszekszpunar/1. Work/Praca/Millenium/CardActions.Api/Directory.Packages.props";
+        // Find solution directory by looking for CardActions.sln
+        var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+        var currentDir = Path.GetDirectoryName(assemblyLocation)!;
+        var solutionDir = FindSolutionDirectory(currentDir);
         
-        _output.WriteLine($"Ścieżka do Directory.Packages.props: {_directoryPackagesPropsPath}");
-        _output.WriteLine($"Plik istnieje: {File.Exists(_directoryPackagesPropsPath)}");
+        if (solutionDir == null)
+        {
+            throw new DirectoryNotFoundException("Could not find solution directory containing CardActions.sln");
+        }
+        
+        _directoryPackagesPropsPath = Path.Combine(solutionDir, "Directory.Packages.props");
+        
+        _output.WriteLine($"Assembly location: {assemblyLocation}");
+        _output.WriteLine($"Solution directory: {solutionDir}");
+        _output.WriteLine($"Directory.Packages.props path: {_directoryPackagesPropsPath}");
+        _output.WriteLine($"File exists: {File.Exists(_directoryPackagesPropsPath)}");
         
         if (File.Exists(_directoryPackagesPropsPath))
         {
@@ -31,11 +42,24 @@ public class PackageVersionTests
             throw new FileNotFoundException($"Nie znaleziono pliku Directory.Packages.props pod ścieżką: {_directoryPackagesPropsPath}");
         }
         
-        // Znajdź wszystkie pliki projektu
-        string solutionDirectory = "/Users/leszekszpunar/1. Work/Praca/Millenium/CardActions.Api";
-        _projectFiles = Directory.GetFiles(solutionDirectory, "*.csproj", SearchOption.AllDirectories)
+        // Find all project files
+        _projectFiles = Directory.GetFiles(solutionDir, "*.csproj", SearchOption.AllDirectories)
             .Where(file => !file.Contains("tests"))
             .ToList();
+    }
+
+    private string? FindSolutionDirectory(string startPath)
+    {
+        var currentDir = startPath;
+        while (currentDir != null)
+        {
+            if (File.Exists(Path.Combine(currentDir, "CardActions.sln")))
+            {
+                return currentDir;
+            }
+            currentDir = Path.GetDirectoryName(currentDir);
+        }
+        return null;
     }
 
     [Fact]
