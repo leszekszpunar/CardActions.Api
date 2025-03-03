@@ -61,7 +61,9 @@ jobs:
       with:
         reports: 'coverage/**/coverage.cobertura.xml'
         targetdir: 'coveragereport'
-        reporttypes: 'HtmlInline;Cobertura;Badges;TeamCitySummary'
+        reporttypes: 'HtmlInline;Cobertura;MarkdownSummaryGithub;TeamCitySummary'
+        title: 'CardActions.Api Coverage Report'
+        tag: '${{ github.sha }}'
         
     - name: Check coverage
       if: success() || failure()
@@ -116,6 +118,18 @@ jobs:
         path: coveragereport/
         retention-days: 14
 
+    - name: Find Coverage Summary
+      id: coverage_summary
+      if: always()
+      continue-on-error: true
+      run: |
+        SUMMARY_FILE=$(find coveragereport -name "SummaryGithub.md" -type f)
+        if [ -f "$SUMMARY_FILE" ]; then
+          echo "summary_content<<EOF" >> $GITHUB_OUTPUT
+          cat "$SUMMARY_FILE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
+
     - name: Add Coverage PR Comment
       if: always()
       continue-on-error: true
@@ -123,38 +137,25 @@ jobs:
       with:
         recreate: true
         message: |
-          ## 📊 Code Coverage Report
+          # 📊 Test Results & Coverage Report
+
+          ## Coverage Summary
+          ${{ steps.code_coverage.outputs.markdown }}
+
+          ## Detailed Coverage Report
+          ${{ steps.coverage_summary.outputs.summary_content }}
+
+          ## 🔍 Test Results
+          - Full test results are available in the "Checks" tab
+          - Detailed HTML report is available in artifacts
           
-          ${{ steps.code_coverage.outputs.markdown || 'Coverage report generation failed. Please check the workflow logs for details.' }}
-          
-          ### 🔍 Details
-          - Full coverage report is available in the artifacts
-          - Test results are available in the artifacts
+          ### 📈 Requirements
           - Minimum required coverage: 60%
           - Target coverage: 80%
           
-          > Note: PRs with coverage below 60% will be blocked from merging.
+          ### 📋 Reports & Artifacts
+          - [Test Results Report](${{ github.event.pull_request.html_url }}/checks?check_run_id=${{ github.run_id }})
+          - [Coverage Report (HTML)](${{ github.event.pull_request.html_url }}/artifacts)
+          - [Test Results (TRX)](${{ github.event.pull_request.html_url }}/artifacts)
           
-          ### 📈 Test Results
-          Szczegółowe wyniki testów są dostępne w zakładce "Checks" tego PR.
-          
-          #### Raporty
-          - Test Results Report: Zobacz zakładkę "Checks" > "Test Results"
-          - Detailed .NET Tests: Zobacz zakładkę "Checks" > ".NET Tests"
-          - HTML Report: Dostępny w artifacts (test-results.html)
-          - TRX Report: Dostępny w artifacts (test-results.trx)
-          
-          ${steps.tests.outcome == 'failure' && '⚠️ **UWAGA**: Testy nie przeszły! Sprawdź szczegóły w zakładce "Checks".' || ''}
-
-    - name: Find Coverage File
-      id: coverage
-      run: |
-        COVERAGE_FILE=$(find coveragereport -name "Summary.md" -type f)
-        echo "file=$COVERAGE_FILE" >> $GITHUB_OUTPUT
-
-    - name: Create Coverage Comment
-      uses: marocchino/sticky-pull-request-comment@v2
-      with:
-        header: test-coverage
-        path: ${{ steps.coverage.outputs.file }}
-        recreate: true 
+          ${steps.tests.outcome == 'failure' && '⚠️ **WARNING**: Tests failed! Check the "Checks" tab for details.' || '✅ All tests passed successfully!'} 
