@@ -24,8 +24,37 @@ jobs:
       run: |
         dotnet restore
         dotnet build --no-restore --configuration Release
-        dotnet test --no-build --configuration Release
-    
+        dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory:./coverage
+
+    - name: Generate Code Coverage Report
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      with:
+        reports: 'coverage/**/coverage.cobertura.xml'
+        targetdir: 'coveragereport'
+        reporttypes: 'HtmlInline;Cobertura'
+
+    - name: Create Code Coverage Badge
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: coveragereport/Cobertura.xml
+        badge: true
+        format: markdown
+        output: both
+        thresholds: '60 80'
+
+    - name: Upload Coverage Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage-report
+        path: coveragereport/
+
+    - name: Add Coverage PR Comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event_name == 'pull_request'
+      with:
+        recreate: true
+        path: code-coverage-summary.md
+
     - name: Publish
       run: dotnet publish src/CardActions.Api/CardActions.Api.csproj -c Release -o publish
 
