@@ -1,0 +1,10 @@
+{
+  "Error.CardNotFound.Title": "Card not found",
+  "Error.CardNotFound.Detail": "Card {0} for user {1} was not found",
+
+  "Validation.UserIdRequired": "User ID is required",
+  "Validation.UserIdTooLong": "User ID cannot be longer than 50 characters",
+  "Validation.CardNumberRequired": "Card number is required",
+  "Validation.CardNumberTooLong": "Card number cannot be longer than 20 characters",
+  "Validation.CardNumberInvalidFormat": "Card number can only contain letters and numbers"
+}
