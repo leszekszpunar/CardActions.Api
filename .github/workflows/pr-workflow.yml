@@ -48,7 +48,7 @@ jobs:
         filename: 'coveragereport/Cobertura.xml'
         badge: true
         format: 'markdown'
-        output: 'both'
+        output: 'markdown'
         thresholds: '60 80'
 
     - name: Upload Coverage Report
@@ -62,5 +62,8 @@ jobs:
       with:
         recreate: true
         message: |
-          # Code Coverage Report
-          ${{ steps.code_coverage.outputs.markdown }} 
+          ## 📊 Code Coverage Report
+          
+          ${{ steps.code_coverage.outputs.markdown }}
+          
+          > Note: This is an informational report and does not block PR merging. 
