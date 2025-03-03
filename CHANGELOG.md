@@ -1,3 +1,10 @@
+# [1.0.0-beta.2](https://github.com/leszekszpunar/CardActions.Api/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2025-03-03)
+
+
+### Features
+
+* **CI/CD:** Update semantic-release step to output new release version ([#7](https://github.com/leszekszpunar/CardActions.Api/issues/7)) ([2e35a8b](https://github.com/leszekszpunar/CardActions.Api/commit/2e35a8b073791169fba69d0248432ca0dd760b6e))
+
 # 1.0.0-beta.1 (2025-03-03)
 
 
