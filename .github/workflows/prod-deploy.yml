@@ -1,0 +1,86 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+      - '.gitignore'
+      - '.editorconfig'
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Restore dependencies
+      run: dotnet restore CardActions.Api/CardActions.sln
+    
+    - name: Build
+      run: dotnet build CardActions.Api/CardActions.sln --no-restore --configuration Release
+    
+    - name: Test
+      run: dotnet test CardActions.Api/CardActions.sln --no-build --configuration Release
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata for Docker
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ghcr.io/${{ github.repository }}/cardactions-api
+        tags: |
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha,format=short
+          latest
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: CardActions.Api
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Update Kubernetes deployment file
+      run: |
+        # Zastąp placeholder w pliku deployment.yaml rzeczywistą nazwą repozytorium
+        sed -i "s|ghcr.io/OWNER/REPO/cardactions-api|ghcr.io/${{ github.repository }}/cardactions-api|g" CardActions.Api/k8s/prod/deployment.yaml
+    
+    - name: Set up kubeconfig
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG_PROD }}
+      
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f CardActions.Api/k8s/prod/deployment.yaml
+        
+    - name: Verify deployment
+      run: |
+        kubectl rollout status deployment/cardactions-api -n production
+        
+    - name: Notify Deployment Status
+      run: |
+        echo "Deployment to Production Environment completed"
+        # Tutaj możesz dodać powiadomienia, np. przez Slack, Teams, itp. 

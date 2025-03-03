@@ -1,0 +1,243 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Restore dependencies
+      run: dotnet restore CardActions.Api/CardActions.sln
+    
+    - name: Build
+      run: dotnet build CardActions.Api/CardActions.sln --no-restore --configuration Release
+    
+    - name: Test
+      run: dotnet test CardActions.Api/CardActions.sln --no-build --configuration Release --verbosity normal
+    
+    - name: Publish
+      if: github.event_name != 'pull_request'
+      run: dotnet publish CardActions.Api/src/CardActions.Api/CardActions.Api.csproj -c Release -o publish
+    
+    - name: Upload artifact
+      if: github.event_name != 'pull_request'
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-artifact
+        path: publish/
+
+  docker-build-and-push:
+    needs: build-and-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata for Docker
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ghcr.io/${{ github.repository }}/cardactions-api
+        tags: |
+          type=ref,event=branch
+          type=sha,format=short
+          latest
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: CardActions.Api/
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Save Docker image for artifacts
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+      uses: docker/build-push-action@v4
+      with:
+        context: CardActions.Api/
+        push: false
+        tags: cardactions-api:latest
+        outputs: type=docker,dest=/tmp/cardactions-api.tar
+    
+    - name: Upload Docker image as artifact
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+      uses: actions/upload-artifact@v3
+      with:
+        name: docker-image
+        path: /tmp/cardactions-api.tar
+    
+  deploy-dev:
+    needs: docker-build-and-push
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download Docker image
+      uses: actions/download-artifact@v3
+      with:
+        name: docker-image
+        path: /tmp
+    
+    - name: Create deployment package
+      run: |
+        mkdir -p deployment-package
+        cp CardActions.Api/docker-compose.yml deployment-package/
+        
+        sed -i "s|image:.*|image: ghcr.io/${{ github.repository }}/cardactions-api:develop|g" deployment-package/docker-compose.yml
+        
+        cat > deployment-package/README.md << EOF
+        # Instrukcje wdrożenia
+        
+        1. Skopiuj pliki na serwer
+        2. Zaloguj się do GitHub Container Registry:
+           docker login ghcr.io -u USERNAME -p TOKEN
+        3. Uruchom: docker-compose up -d
+        EOF
+        
+    - name: Upload deployment package
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-dev
+        path: deployment-package/
+        
+    - name: Create GitHub deployment
+      uses: chrnorm/deployment-action@v2
+      with:
+        token: "${{ github.token }}"
+        environment: development
+        description: "Deployment to development environment"
+    
+  deploy-prod:
+    needs: docker-build-and-push
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download Docker image
+      uses: actions/download-artifact@v3
+      with:
+        name: docker-image
+        path: /tmp
+    
+    - name: Create deployment package
+      run: |
+        mkdir -p deployment-package
+        cp CardActions.Api/docker-compose.yml deployment-package/
+        
+        sed -i "s|image:.*|image: ghcr.io/${{ github.repository }}/cardactions-api:latest|g" deployment-package/docker-compose.yml
+        
+        if [ -f "CardActions.Api/docker-compose.prod.yml" ]; then
+          cp CardActions.Api/docker-compose.prod.yml deployment-package/
+        fi
+        
+        cat > deployment-package/README.md << EOF
+        # Instrukcje wdrożenia
+        
+        1. Skopiuj pliki na serwer
+        2. Zaloguj się do GitHub Container Registry:
+           docker login ghcr.io -u USERNAME -p TOKEN
+        3. Uruchom: docker-compose up -d
+        EOF
+        
+    - name: Upload deployment package
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-prod
+        path: deployment-package/
+        
+    - name: Create GitHub deployment
+      uses: chrnorm/deployment-action@v2
+      with:
+        token: "${{ github.token }}"
+        environment: production
+        description: "Deployment to production environment"
+        
+  generate-docs:
+    needs: build-and-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Generate API documentation
+      run: |
+        mkdir -p api-docs
+        
+        cp CardActions.Api/README.md api-docs/index.md
+        
+        cat > api-docs/docker.md << EOF
+        # Docker Image
+        
+        Obraz Docker jest dostępny w GitHub Container Registry:
+        
+        ```bash
+        # Pobranie obrazu
+        docker pull ghcr.io/${{ github.repository }}/cardactions-api:latest
+        
+        # Uruchomienie kontenera
+        docker run -p 8080:80 ghcr.io/${{ github.repository }}/cardactions-api:latest
+        ```
+        EOF
+        
+        cat > api-docs/_config.yml << EOF
+        theme: jekyll-theme-cayman
+        title: CardActions API
+        description: Dokumentacja API do zarządzania akcjami na kartach płatniczych
+        EOF
+        
+        mkdir -p api-docs/_data
+        cat > api-docs/_data/navigation.yml << EOF
+        - name: Strona główna
+          link: /
+        - name: Docker
+          link: /docker.html
+        EOF
+    
+    - name: Upload documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-documentation
+        path: api-docs/
+        
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./api-docs 

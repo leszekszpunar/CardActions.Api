@@ -1,0 +1,53 @@
+name: Pull Request Workflow
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**/*.md'
+      - '.gitignore'
+      - '.editorconfig'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Restore dependencies
+      run: dotnet restore CardActions.Api/CardActions.sln
+    
+    - name: Build
+      run: dotnet build CardActions.Api/CardActions.sln --no-restore --configuration Release
+    
+    - name: Test with coverage
+      run: dotnet test CardActions.Api/CardActions.sln --no-build --configuration Release --collect:"XPlat Code Coverage"
+    
+    - name: Install ReportGenerator
+      run: dotnet tool install -g dotnet-reportgenerator-globaltool
+    
+    - name: Generate coverage report
+      run: reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:Html
+    
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage-report
+    
+    - name: Check code coverage
+      shell: bash
+      run: |
+        COVERAGE=$(grep -o 'line-rate="[0-9]\.[0-9]*"' **/coverage.cobertura.xml | grep -o '[0-9]\.[0-9]*' | awk '{s+=$1} END {print s/NR}')
+        COVERAGE_PERCENT=$(echo "$COVERAGE * 100" | bc)
+        echo "Code coverage: $COVERAGE_PERCENT%"
+        if (( $(echo "$COVERAGE_PERCENT < 70" | bc -l) )); then
+          echo "Code coverage is below 70%"
+          exit 1
+        fi 

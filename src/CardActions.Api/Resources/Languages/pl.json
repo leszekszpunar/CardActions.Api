@@ -1,0 +1,10 @@
+{
+  "Error.CardNotFound.Title": "Nie znaleziono karty",
+  "Error.CardNotFound.Detail": "Karta {0} dla użytkownika {1} nie została znaleziona",
+
+  "Validation.UserIdRequired": "Identyfikator użytkownika jest wymagany",
+  "Validation.UserIdTooLong": "Identyfikator użytkownika nie może być dłuższy niż 50 znaków",
+  "Validation.CardNumberRequired": "Numer karty jest wymagany",
+  "Validation.CardNumberTooLong": "Numer karty nie może być dłuższy niż 20 znaków",
+  "Validation.CardNumberInvalidFormat": "Numer karty może zawierać tylko litery i cyfry"
+}

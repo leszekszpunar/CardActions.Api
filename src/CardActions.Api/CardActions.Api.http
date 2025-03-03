@@ -1,0 +1,22 @@
+@baseUrl = http://localhost:5003/api/users
+@userId = User1
+
+### Pobranie szczegółów karty użytkownika (Prepaid, Inactive)
+GET {{baseUrl}}/{{userId}}/cards/Card12/actions
+Accept: application/json
+
+### Pobranie dozwolonych akcji dla karty Prepaid w statusie Closed (Card17)
+GET {{baseUrl}}/{{userId}}/cards/Card17/actions
+Accept: application/json
+
+### Pobranie dozwolonych akcji dla karty Credit w statusie Blocked (Card112, PIN nadany)
+GET {{baseUrl}}/{{userId}}/cards/Card112/actions
+Accept: application/json
+
+### Pobranie dozwolonych akcji dla karty Credit w statusie Blocked (Card119, bez PIN-u)
+GET {{baseUrl}}/{{userId}}/cards/Card119/actions
+Accept: application/json
+
+### Pobranie dozwolonych akcji dla nieistniejącej karty
+GET {{baseUrl}}/{{userId}}/cards/InvalidCard/actions
+Accept: application/json

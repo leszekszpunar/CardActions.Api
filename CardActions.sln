@@ -1,0 +1,84 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{99869785-48F7-4C3C-8A2D-A47D47C5E01F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Domain", "src\CardActions.Domain\CardActions.Domain.csproj", "{F43711EB-4604-40CB-946B-BD3815192E5D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Application", "src\CardActions.Application\CardActions.Application.csproj", "{74624124-61D4-4CC1-A5C6-20D88DBD37BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Infrastructure", "src\CardActions.Infrastructure\CardActions.Infrastructure.csproj", "{6E71907E-0D94-473D-A101-A8CAC33B3000}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Infrastructure.Data", "src\CardActions.Infrastructure.Data\CardActions.Infrastructure.Data.csproj", "{01965D17-5921-4D19-828B-9D33272F2B03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Api", "src\CardActions.Api\CardActions.Api.csproj", "{D3959E1C-0345-4813-A231-0164B16C33F0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{AF7FE797-D4F1-4927-AD3D-890B9DF93FF5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "items", "items", "{CAD8CCBE-930C-49BE-A278-7EC049D37283}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		global.json = global.json
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Architecture.Tests", "tests\CardActions.Architecture.Tests\CardActions.Architecture.Tests.csproj", "{C6F53F80-13AC-4285-B54D-6F198AA28B12}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Unit.Tests", "tests\CardActions.Unit.Tests\CardActions.Unit.Tests.csproj", "{109D9151-4F61-410A-B69C-F45EA9CC4DAE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Integration.Tests", "tests\CardActions.Integration.Tests\CardActions.Integration.Tests.csproj", "{D098E58B-B833-4F77-B369-11D71000BBA9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F43711EB-4604-40CB-946B-BD3815192E5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F43711EB-4604-40CB-946B-BD3815192E5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F43711EB-4604-40CB-946B-BD3815192E5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F43711EB-4604-40CB-946B-BD3815192E5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74624124-61D4-4CC1-A5C6-20D88DBD37BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74624124-61D4-4CC1-A5C6-20D88DBD37BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74624124-61D4-4CC1-A5C6-20D88DBD37BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74624124-61D4-4CC1-A5C6-20D88DBD37BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E71907E-0D94-473D-A101-A8CAC33B3000}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E71907E-0D94-473D-A101-A8CAC33B3000}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E71907E-0D94-473D-A101-A8CAC33B3000}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E71907E-0D94-473D-A101-A8CAC33B3000}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01965D17-5921-4D19-828B-9D33272F2B03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01965D17-5921-4D19-828B-9D33272F2B03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01965D17-5921-4D19-828B-9D33272F2B03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01965D17-5921-4D19-828B-9D33272F2B03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3959E1C-0345-4813-A231-0164B16C33F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3959E1C-0345-4813-A231-0164B16C33F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3959E1C-0345-4813-A231-0164B16C33F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3959E1C-0345-4813-A231-0164B16C33F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6F53F80-13AC-4285-B54D-6F198AA28B12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6F53F80-13AC-4285-B54D-6F198AA28B12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6F53F80-13AC-4285-B54D-6F198AA28B12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6F53F80-13AC-4285-B54D-6F198AA28B12}.Release|Any CPU.Build.0 = Release|Any CPU
+		{109D9151-4F61-410A-B69C-F45EA9CC4DAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{109D9151-4F61-410A-B69C-F45EA9CC4DAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{109D9151-4F61-410A-B69C-F45EA9CC4DAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{109D9151-4F61-410A-B69C-F45EA9CC4DAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D098E58B-B833-4F77-B369-11D71000BBA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D098E58B-B833-4F77-B369-11D71000BBA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D098E58B-B833-4F77-B369-11D71000BBA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D098E58B-B833-4F77-B369-11D71000BBA9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F43711EB-4604-40CB-946B-BD3815192E5D} = {99869785-48F7-4C3C-8A2D-A47D47C5E01F}
+		{74624124-61D4-4CC1-A5C6-20D88DBD37BB} = {99869785-48F7-4C3C-8A2D-A47D47C5E01F}
+		{6E71907E-0D94-473D-A101-A8CAC33B3000} = {99869785-48F7-4C3C-8A2D-A47D47C5E01F}
+		{01965D17-5921-4D19-828B-9D33272F2B03} = {99869785-48F7-4C3C-8A2D-A47D47C5E01F}
+		{D3959E1C-0345-4813-A231-0164B16C33F0} = {99869785-48F7-4C3C-8A2D-A47D47C5E01F}
+		{C6F53F80-13AC-4285-B54D-6F198AA28B12} = {AF7FE797-D4F1-4927-AD3D-890B9DF93FF5}
+		{109D9151-4F61-410A-B69C-F45EA9CC4DAE} = {AF7FE797-D4F1-4927-AD3D-890B9DF93FF5}
+		{D098E58B-B833-4F77-B369-11D71000BBA9} = {AF7FE797-D4F1-4927-AD3D-890B9DF93FF5}
+	EndGlobalSection
+EndGlobal
