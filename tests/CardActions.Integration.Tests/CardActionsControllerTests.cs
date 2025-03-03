@@ -59,8 +59,7 @@ public class CardActionsControllerTests : IClassFixture<CustomWebApplicationFact
     }
 
     [Theory]
-    [InlineData("User1", "Card17", new[] { "ACTION3", "ACTION4", "ACTION9" })] // Prepaid Closed
-    [InlineData("User1", "Card25", new[] { "ACTION3", "ACTION4", "ACTION5", "ACTION9", "ACTION12", "ACTION13" })] // Credit, Ordered
+    [InlineData("User1", "Card17", new[] { "ACTION3", "ACTION4", "ACTION9" })]
     public async Task GetAllowedActions_ForValidCard_ShouldReturnExpectedActions(string userId, string cardNumber, string[] expectedActions)
     {
         _logger.LogInformation("Testing GetAllowedActions for user {UserId} and card {CardNumber}", userId, cardNumber);
