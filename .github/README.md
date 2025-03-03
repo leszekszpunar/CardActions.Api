@@ -43,6 +43,13 @@ act push -W .github/workflows/ci-cd.yml -n --container-architecture linux/amd64
 
 # Pełne wykonanie
 act push -W .github/workflows/ci-cd.yml --container-architecture linux/amd64
+
+# Testowanie pojedynczych jobów
+act push -j build -n --container-architecture linux/amd64
+act push -j release -n --container-architecture linux/amd64
+act push -j docker -n --container-architecture linux/amd64
+act push -j deploy-docs -n --container-architecture linux/amd64
+act push -j deploy-demo -n --container-architecture linux/amd64
 ```
 
 ## Ważne uwagi
@@ -52,6 +59,7 @@ act push -W .github/workflows/ci-cd.yml --container-architecture linux/amd64
    - `-n` - dry run (nie wykonuje rzeczywistych akcji)
    - `-W` - ścieżka do konkretnego pliku workflow
    - `-v` - tryb verbose dla debugowania
+   - `-j` - uruchomienie konkretnego joba
 
 3. Sekrety:
    Jeśli workflow wymaga sekretów, utwórz plik `.secrets` w głównym katalogu:
@@ -82,4 +90,15 @@ act push -W .github/workflows/ci-cd.yml --container-architecture linux/amd64
 2. Jeśli pojawią się problemy z pamięcią:
    ```bash
    act -W .github/workflows/pr-workflow.yml --container-architecture linux/amd64 -P ubuntu-latest=catthehacker/ubuntu:act-latest
+   ```
+
+3. Jeśli pojawią się problemy z Node.js w semantic-release:
+   ```bash
+   act push -j release --container-architecture linux/amd64 -P ubuntu-latest=node:16-buster
+   ```
+
+4. Jeśli pojawią się problemy z Docker Buildx:
+   ```bash
+   # Przed uruchomieniem testu
+   docker buildx create --use
    ``` 

@@ -60,6 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.semantic.outputs.new_release_version }}
+      channel: ${{ github.ref == 'refs/heads/main' && 'latest' || 'beta' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -109,12 +110,10 @@ jobs:
       with:
         images: ghcr.io/${{ github.repository }}/cardactions-api
         tags: |
-          type=semver,pattern={{version}},enable=${{ needs.release.outputs.version != '' }}
-          type=semver,pattern={{major}}.{{minor}},enable=${{ needs.release.outputs.version != '' }}
-          type=sha,prefix=sha-,format=short
-          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-          type=raw,value=beta,enable=${{ github.ref == 'refs/heads/develop' }}
-          type=raw,value={{date 'YYYYMMDD-HHmmss'}}
+          type=raw,value=${{ needs.release.outputs.version }}
+          type=raw,value=${{ needs.release.outputs.channel }}
+          type=sha,prefix=${{ needs.release.outputs.channel }}-sha-
+          type=raw,value=${{ needs.release.outputs.channel }}-${{ github.sha }}
         flavor: |
           latest=false
           prefix=
@@ -123,8 +122,9 @@ jobs:
           org.opencontainers.image.title=CardActions API
           org.opencontainers.image.description=Card Actions API for Millennium Project
           org.opencontainers.image.version=${{ needs.release.outputs.version }}
-          org.opencontainers.image.created={{date 'YYYY-MM-DDTHH:mm:ssZ'}}
+          org.opencontainers.image.created=${{ github.event.repository.updated_at }}
           org.opencontainers.image.revision=${{ github.sha }}
+          org.opencontainers.image.version.channel=${{ needs.release.outputs.channel }}
     
     - name: Build and push
       uses: docker/build-push-action@v4
@@ -139,7 +139,7 @@ jobs:
   # 4. Deploy dokumentacji do GitHub Pages
   deploy-docs:
     needs: [release]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: always()
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
@@ -153,7 +153,6 @@ jobs:
     - name: Build documentation
       run: |
         mkdir -p docs-build
-        # Kopiujemy dokumentację do odpowiedniego katalogu (main lub dev)
         if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
           cp -r ${{ env.DOCS_PATH }}/* docs-build/
         else
@@ -161,12 +160,12 @@ jobs:
           cp -r ${{ env.DOCS_PATH }}/* docs-build/dev/
         fi
         
-        # Generujemy plik konfiguracyjny z URL-ami
         cat > docs-build/config.json << EOF
         {
           "env": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
-          "version": "${{ needs.release.outputs.version }}",
-          "apiUrl": "https://ghcr.io/${{ github.repository }}/cardactions-api:${{ github.ref == 'refs/heads/main' && 'latest' || 'beta' }}"
+          "version": "${{ needs.release.outputs.version || 'no-release' }}",
+          "channel": "${{ needs.release.outputs.channel }}",
+          "apiUrl": "ghcr.io/${{ github.repository }}/cardactions-api:${{ needs.release.outputs.version || needs.release.outputs.channel }}"
         }
         EOF
     
@@ -182,22 +181,21 @@ jobs:
   # 5. Deploy demo do GitHub Container Registry
   deploy-demo:
     needs: [docker, release]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    if: needs.release.outputs.version != ''
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-      url: https://ghcr.io/${{ github.repository }}/cardactions-api:${{ github.ref == 'refs/heads/main' && 'latest' || 'beta' }}
+      url: https://ghcr.io/${{ github.repository }}/cardactions-api:${{ needs.release.outputs.version }}
     steps:
     - name: Create GitHub Environment Variables
       run: |
-        # Ustawiamy zmienne środowiskowe dla GitHub Environment
-        echo "DOCKER_IMAGE=ghcr.io/${{ github.repository }}/cardactions-api:${{ github.ref == 'refs/heads/main' && needs.release.outputs.version || 'beta' }}" >> $GITHUB_ENV
+        echo "DOCKER_IMAGE=ghcr.io/${{ github.repository }}/cardactions-api:${{ needs.release.outputs.version }}" >> $GITHUB_ENV
         echo "DEPLOYMENT_URL=https://${{ env.GITHUB_PAGES_URL }}/${{ env.REPOSITORY_NAME }}/${{ github.ref == 'refs/heads/main' && '' || 'dev' }}" >> $GITHUB_ENV
         
-        # Tworzymy plik z konfiguracją deploymentu
         cat > deployment.json << EOF
         {
           "version": "${{ needs.release.outputs.version }}",
+          "channel": "${{ needs.release.outputs.channel }}",
           "environment": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
           "dockerImage": "${{ env.DOCKER_IMAGE }}",
           "docsUrl": "${{ env.DEPLOYMENT_URL }}"
@@ -207,6 +205,6 @@ jobs:
     - name: Upload Deployment Config
       uses: actions/upload-artifact@v4
       with:
-        name: deployment-config
+        name: deployment-config-${{ needs.release.outputs.channel }}
         path: deployment.json
         retention-days: 30 
