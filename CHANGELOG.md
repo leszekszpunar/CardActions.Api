@@ -1,3 +1,12 @@
+# [1.1.0](https://github.com/leszekszpunar/CardActions.Api/compare/v1.0.0...v1.1.0) (2025-03-04)
+
+
+### Features
+
+* **CI/CD:** Add API documentation generation and cleanup steps in workflow ([f5e778a](https://github.com/leszekszpunar/CardActions.Api/commit/f5e778a3325393e350503edc0160aeda48327ae7))
+* **CI/CD:** Add permissions for GitHub Pages deployment job ([d020944](https://github.com/leszekszpunar/CardActions.Api/commit/d0209446d6b7fd1a04233a6a9ce4081f408d86e5))
+* **CI/CD:** Refactor permissions and enhance deployment steps in workflows ([546ad54](https://github.com/leszekszpunar/CardActions.Api/commit/546ad54ae496eada06274e443278b126de66dc43))
+
 # [1.1.0-develop.3](https://github.com/leszekszpunar/CardActions.Api/compare/v1.1.0-develop.2...v1.1.0-develop.3) (2025-03-04)
 
 # [1.1.0-develop.2](https://github.com/leszekszpunar/CardActions.Api/compare/v1.1.0-develop.1...v1.1.0-develop.2) (2025-03-04)
