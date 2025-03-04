@@ -175,7 +175,7 @@ jobs:
   # 4. Deploy dokumentacji do GitHub Pages
   deploy-docs:
     needs: release
-    if: needs.release.outputs.version != ''
+    if: needs.release.outputs.version != '' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -199,21 +199,11 @@ jobs:
     - name: Prepare Documentation
       run: |
         mkdir -p docs-build
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          # Main branch - dokumentacja w głównym katalogu
-          cp README.md docs-build/index.md
-        else
-          # Develop branch - dokumentacja w podkatalogu dev
-          mkdir -p docs-build/dev
-          cp README.md docs-build/dev/index.md
-          # Dodaj przekierowanie w głównym katalogu
-          echo "<meta http-equiv=\"refresh\" content=\"0; url=dev/\">" > docs-build/index.html
-        fi
+        cp README.md docs-build/index.md
         
         # Dodaj config.json z informacjami o wersji
         cat > docs-build/config.json << EOF
         {
-          "env": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
           "version": "${{ needs.release.outputs.version }}",
           "channel": "${{ needs.release.outputs.channel }}",
           "apiUrl": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
@@ -238,7 +228,7 @@ jobs:
 
   # 5. Konfiguracja środowiska
   deploy:
-    needs: [docker, release, deploy-docs]
+    needs: [docker, release]
     if: needs.release.outputs.version != ''
     runs-on: ubuntu-latest
     permissions:
@@ -246,13 +236,18 @@ jobs:
       deployments: write
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-      url: ${{ needs.deploy-docs.outputs.page_url }}
+      url: ${{ steps.create_config.outputs.docs_url }}
     steps:
     - name: Create Deployment Config
+      id: create_config
       run: |
-        # Oblicz URL dokumentacji
-        DOCS_BASE_URL="${{ needs.deploy-docs.outputs.page_url }}"
-        DOCS_URL="$DOCS_BASE_URL/${{ github.ref == 'refs/heads/main' && '' || 'dev' }}"
+        # Ustaw URL dokumentacji
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          DOCS_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+        else
+          DOCS_URL="https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/blob/develop/README.md"
+        fi
+        echo "docs_url=$DOCS_URL" >> $GITHUB_OUTPUT
         
         cat > deployment.json << EOF
         {
