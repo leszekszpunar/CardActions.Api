@@ -48,17 +48,6 @@ jobs:
         dotnet test --no-build --configuration Release
         dotnet publish src/CardActions.Api/CardActions.Api.csproj -c Release -o publish
 
-    - name: Generate API documentation
-      run: |
-        # Instalacja narzędzi npm
-        npm install -g @redocly/cli
-        
-        # Generowanie specyfikacji OpenAPI
-        dotnet swagger tofile --output docs/openapi.json ./publish/CardActions.Api.dll v1
-        
-        # Generowanie dokumentacji HTML z Redoc
-        npx @redocly/cli build-docs docs/openapi.json -o docs/redoc.html
-
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
@@ -188,7 +177,6 @@ jobs:
     needs: release
     if: needs.release.outputs.version != ''
     runs-on: ubuntu-latest
-    # Add specific permissions for this job
     permissions:
       pages: write
       id-token: write
@@ -211,13 +199,11 @@ jobs:
         mkdir -p docs-build
         if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
           # Main branch - dokumentacja w głównym katalogu
-          cp -r docs/* docs-build/
-          mv docs-build/redoc.html docs-build/index.html
+          cp README.md docs-build/index.md
         else
           # Develop branch - dokumentacja w podkatalogu dev
           mkdir -p docs-build/dev
-          cp -r docs/* docs-build/dev/
-          mv docs-build/dev/redoc.html docs-build/dev/index.html
+          cp README.md docs-build/dev/index.md
           # Dodaj przekierowanie w głównym katalogu
           echo "<meta http-equiv=\"refresh\" content=\"0; url=dev/\">" > docs-build/index.html
         fi
