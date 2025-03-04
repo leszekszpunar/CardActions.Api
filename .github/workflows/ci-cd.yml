@@ -28,6 +28,9 @@ jobs:
   # 1. Build i testy
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write  # dla testów
     steps:
     - uses: actions/checkout@v4
       with:
@@ -45,6 +48,17 @@ jobs:
         dotnet test --no-build --configuration Release
         dotnet publish src/CardActions.Api/CardActions.Api.csproj -c Release -o publish
 
+    - name: Generate API documentation
+      run: |
+        # Instalacja narzędzi npm
+        npm install -g @redocly/cli
+        
+        # Generowanie specyfikacji OpenAPI
+        dotnet swagger tofile --output docs/openapi.json ./publish/CardActions.Api.dll v1
+        
+        # Generowanie dokumentacji HTML z Redoc
+        npx @redocly/cli build-docs docs/openapi.json -o docs/redoc.html
+
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
@@ -56,6 +70,11 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      packages: read
     outputs:
       version: ${{ steps.semantic.outputs.new_release_version }}
       channel: ${{ github.ref == 'refs/heads/main' && 'latest' || 'beta' }}
@@ -77,22 +96,36 @@ jobs:
           @semantic-release/commit-analyzer \
           @semantic-release/release-notes-generator \
           @semantic-release/github \
-          @semantic-release/exec
+          @semantic-release/exec \
+          @semantic-release/changelog \
+          @semantic-release/git
     
     - name: Semantic Release
       id: semantic
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        npx semantic-release
+        # Uruchom semantic-release i zapisz output
+        SEMANTIC_OUTPUT=$(npx semantic-release)
+        echo "Semantic Release Output: $SEMANTIC_OUTPUT"
+        
+        # Pobierz najnowszy tag
         VERSION=$(git describe --tags --abbrev=0)
+        echo "Latest Tag: $VERSION"
+        
+        # Ustaw zmienną wyjściową
         echo "new_release_version=${VERSION#v}" >> $GITHUB_OUTPUT
+        echo "Version Output: ${VERSION#v}"
 
   # 3. Build i push Docker image
   docker:
     needs: release
     if: needs.release.outputs.version != ''
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+      security-events: write  # dla SBOM i provenance
     steps:
     - uses: actions/checkout@v4
     
@@ -116,9 +149,11 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ghcr.io/${{ github.repository }}/cardactions-api
+        images: ghcr.io/${{ github.repository_owner }}/cardactions-api
         tags: |
-          type=raw,value=${{ needs.release.outputs.version }}
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
           type=raw,value=${{ needs.release.outputs.channel }}
           type=sha,prefix=${{ needs.release.outputs.channel }}-
         flavor: |
@@ -132,6 +167,8 @@ jobs:
           org.opencontainers.image.created=${{ github.event.repository.updated_at }}
           org.opencontainers.image.revision=${{ github.sha }}
           org.opencontainers.image.version.channel=${{ needs.release.outputs.channel }}
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.licenses=MIT
     
     - name: Build and push
       uses: docker/build-push-action@v4
@@ -143,6 +180,8 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        provenance: true
+        sbom: true
 
   # 4. Deploy dokumentacji do GitHub Pages
   deploy-docs:
@@ -156,7 +195,7 @@ jobs:
       contents: read
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-      url: https://${{ env.GITHUB_PAGES_URL }}/${{ env.REPOSITORY_NAME }}/${{ github.ref == 'refs/heads/main' && '' || 'dev' }}
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - uses: actions/checkout@v4
@@ -164,25 +203,32 @@ jobs:
     - name: Setup Pages
       uses: actions/configure-pages@v4
       with:
-        enablement: true
         token: ${{ secrets.GITHUB_TOKEN }}
+        enablement: true
     
-    - name: Build documentation
+    - name: Prepare Documentation
       run: |
         mkdir -p docs-build
         if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          cp -r ${{ env.DOCS_PATH }}/* docs-build/
+          # Main branch - dokumentacja w głównym katalogu
+          cp -r docs/* docs-build/
+          mv docs-build/redoc.html docs-build/index.html
         else
+          # Develop branch - dokumentacja w podkatalogu dev
           mkdir -p docs-build/dev
-          cp -r ${{ env.DOCS_PATH }}/* docs-build/dev/
+          cp -r docs/* docs-build/dev/
+          mv docs-build/dev/redoc.html docs-build/dev/index.html
+          # Dodaj przekierowanie w głównym katalogu
+          echo "<meta http-equiv=\"refresh\" content=\"0; url=dev/\">" > docs-build/index.html
         fi
         
+        # Dodaj config.json z informacjami o wersji
         cat > docs-build/config.json << EOF
         {
           "env": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
           "version": "${{ needs.release.outputs.version }}",
           "channel": "${{ needs.release.outputs.channel }}",
-          "apiUrl": "ghcr.io/${{ github.repository }}/cardactions-api:${{ needs.release.outputs.version }}"
+          "apiUrl": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
         }
         EOF
     
@@ -194,15 +240,20 @@ jobs:
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
 
   # 5. Konfiguracja środowiska
   deploy:
     needs: [docker, release]
     if: needs.release.outputs.version != ''
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-      url: https://ghcr.io/${{ github.repository }}/cardactions-api:${{ needs.release.outputs.version }}
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
     - name: Create Deployment Config
       run: |
@@ -211,7 +262,7 @@ jobs:
           "version": "${{ needs.release.outputs.version }}",
           "channel": "${{ needs.release.outputs.channel }}",
           "environment": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
-          "dockerImage": "ghcr.io/${{ github.repository }}/cardactions-api:${{ needs.release.outputs.version }}",
+          "dockerImage": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}",
           "docsUrl": "https://${{ env.GITHUB_PAGES_URL }}/${{ env.REPOSITORY_NAME }}/${{ github.ref == 'refs/heads/main' && '' || 'dev' }}"
         }
         EOF
@@ -221,4 +272,37 @@ jobs:
       with:
         name: deployment-config-${{ needs.release.outputs.channel }}
         path: deployment.json
-        retention-days: 30 
+        retention-days: 30
+
+    # 6. Cleanup starych obrazów Docker
+  cleanup:
+    needs: [docker, deploy]
+    if: always() && needs.docker.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Delete untagged images
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'cardactions-api'
+          package-type: 'container'
+          min-versions-to-keep: 3
+          delete-only-untagged-versions: true
+
+      - name: Delete old versions (main)
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'cardactions-api'
+          package-type: 'container'
+          min-versions-to-keep: 3
+          delete-tags-regex: '^[0-9]+\.[0-9]+\.[0-9]+$' # Usuwa starsze wersje stable
+
+      - name: Delete old versions (develop)
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'cardactions-api'
+          package-type: 'container'
+          min-versions-to-keep: 3
+          delete-tags-regex: '^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$' # Usuwa starsze wersje beta
