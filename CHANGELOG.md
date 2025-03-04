@@ -1,3 +1,5 @@
+# [1.1.0-develop.2](https://github.com/leszekszpunar/CardActions.Api/compare/v1.1.0-develop.1...v1.1.0-develop.2) (2025-03-04)
+
 # [1.1.0-develop.1](https://github.com/leszekszpunar/CardActions.Api/compare/v1.0.0...v1.1.0-develop.1) (2025-03-04)
 
 
