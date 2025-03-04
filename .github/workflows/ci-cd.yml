@@ -182,8 +182,10 @@ jobs:
       id-token: write
       contents: read
     environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+      name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - uses: actions/checkout@v4
@@ -229,9 +231,14 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Display deployment URL
+      run: |
+        echo "Documentation deployed to: ${{ steps.deployment.outputs.page_url }}"
+        echo "page_url=${{ steps.deployment.outputs.page_url }}" >> $GITHUB_OUTPUT
+
   # 5. Konfiguracja środowiska
   deploy:
-    needs: [docker, release]
+    needs: [docker, release, deploy-docs]
     if: needs.release.outputs.version != ''
     runs-on: ubuntu-latest
     permissions:
@@ -239,19 +246,30 @@ jobs:
       deployments: write
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ needs.deploy-docs.outputs.page_url }}
     steps:
     - name: Create Deployment Config
       run: |
+        # Oblicz URL dokumentacji
+        DOCS_BASE_URL="${{ needs.deploy-docs.outputs.page_url }}"
+        DOCS_URL="$DOCS_BASE_URL/${{ github.ref == 'refs/heads/main' && '' || 'dev' }}"
+        
         cat > deployment.json << EOF
         {
           "version": "${{ needs.release.outputs.version }}",
           "channel": "${{ needs.release.outputs.channel }}",
           "environment": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
           "dockerImage": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}",
-          "docsUrl": "https://${{ env.GITHUB_PAGES_URL }}/${{ env.REPOSITORY_NAME }}/${{ github.ref == 'refs/heads/main' && '' || 'dev' }}"
+          "docsUrl": "$DOCS_URL"
         }
         EOF
+        
+        echo "Configuration Summary:"
+        echo "Version: ${{ needs.release.outputs.version }}"
+        echo "Channel: ${{ needs.release.outputs.channel }}"
+        echo "Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}"
+        echo "Docker Image: ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
+        echo "Documentation URL: $DOCS_URL"
     
     - name: Upload Deployment Config
       uses: actions/upload-artifact@v4
@@ -260,7 +278,7 @@ jobs:
         path: deployment.json
         retention-days: 30
 
-    # 6. Cleanup starych obrazów Docker
+  # 6. Cleanup starych obrazów Docker
   cleanup:
     needs: [docker, deploy]
     if: always() && needs.docker.result == 'success'
@@ -277,18 +295,19 @@ jobs:
           min-versions-to-keep: 3
           delete-only-untagged-versions: true
 
-      - name: Delete old versions (main)
+      - name: Delete old stable versions
         uses: actions/delete-package-versions@v4
         with:
           package-name: 'cardactions-api'
           package-type: 'container'
           min-versions-to-keep: 3
-          delete-tags-regex: '^[0-9]+\.[0-9]+\.[0-9]+$' # Usuwa starsze wersje stable
+          delete-only-pre-release-versions: false
+          ignore-versions: '^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$'
 
-      - name: Delete old versions (develop)
+      - name: Delete old beta versions
         uses: actions/delete-package-versions@v4
         with:
           package-name: 'cardactions-api'
           package-type: 'container'
           min-versions-to-keep: 3
-          delete-tags-regex: '^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$' # Usuwa starsze wersje beta
+          delete-only-pre-release-versions: true
