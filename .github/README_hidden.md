@@ -1,4 +1,4 @@
-.# Lokalne testowanie GitHub Actions
+# Lokalne testowanie GitHub Actions
 
 ## Wymagania
 - [act](https://github.com/nektos/act) - narzędzie do lokalnego testowania GitHub Actions
