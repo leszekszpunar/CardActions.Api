@@ -9,8 +9,14 @@ on:
       - '.editorconfig'
       - 'docs/**'
 
-# Globalne uprawnienia - domyślnie read
-permissions: read-all
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  packages: write
+  id-token: write
+  pages: write
+  deployments: write
 
 # Konfiguracja środowiska
 env:
@@ -149,6 +155,11 @@ jobs:
           type=semver,pattern={{major}}.{{minor}}
           type=semver,pattern={{major}}
           type=raw,value=${{ needs.release.outputs.channel }}
+          type=sha,prefix=${{ needs.release.outputs.channel }}-
+        flavor: |
+          latest=auto
+          prefix=
+          suffix=
         labels: |
           org.opencontainers.image.title=CardActions API
           org.opencontainers.image.description=Card Actions API for Millennium Project
@@ -177,16 +188,11 @@ jobs:
     needs: release
     if: needs.release.outputs.version != ''
     runs-on: ubuntu-latest
+    # Add specific permissions for this job
     permissions:
       pages: write
       id-token: write
       contents: read
-    
-    # Single deployment target
-    concurrency:
-      group: "pages"
-      cancel-in-progress: true  # anuluj poprzedni deployment
-    
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
       url: ${{ steps.deployment.outputs.page_url }}
