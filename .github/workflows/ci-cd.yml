@@ -42,6 +42,17 @@ jobs:
         dotnet test --no-build --configuration Release
         dotnet publish src/CardActions.Api/CardActions.Api.csproj -c Release -o publish
 
+    - name: Generate API documentation
+      run: |
+        # Instalacja narzędzi npm
+        npm install -g @redocly/cli
+        
+        # Generowanie specyfikacji OpenAPI
+        dotnet swagger tofile --output docs/openapi.json ./publish/CardActions.Api.dll v1
+        
+        # Generowanie dokumentacji HTML z Redoc
+        npx @redocly/cli build-docs docs/openapi.json -o docs/redoc.html
+
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
@@ -79,7 +90,9 @@ jobs:
           @semantic-release/commit-analyzer \
           @semantic-release/release-notes-generator \
           @semantic-release/github \
-          @semantic-release/exec
+          @semantic-release/exec \
+          @semantic-release/changelog \
+          @semantic-release/git
     
     - name: Semantic Release
       id: semantic
@@ -132,13 +145,10 @@ jobs:
       with:
         images: ghcr.io/${{ github.repository_owner }}/cardactions-api
         tags: |
-          type=raw,value=${{ needs.release.outputs.version }}
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
           type=raw,value=${{ needs.release.outputs.channel }}
-          type=sha,prefix=${{ needs.release.outputs.channel }}-
-        flavor: |
-          latest=auto
-          prefix=
-          suffix=
         labels: |
           org.opencontainers.image.title=CardActions API
           org.opencontainers.image.description=Card Actions API for Millennium Project
@@ -146,6 +156,8 @@ jobs:
           org.opencontainers.image.created=${{ github.event.repository.updated_at }}
           org.opencontainers.image.revision=${{ github.sha }}
           org.opencontainers.image.version.channel=${{ needs.release.outputs.channel }}
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.licenses=MIT
     
     - name: Build and push
       uses: docker/build-push-action@v4
@@ -254,4 +266,37 @@ jobs:
       with:
         name: deployment-config-${{ needs.release.outputs.channel }}
         path: deployment.json
-        retention-days: 30 
+        retention-days: 30
+
+    # 6. Cleanup starych obrazów Docker
+  cleanup:
+    needs: [docker, deploy]
+    if: always() && needs.docker.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Delete untagged images
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'cardactions-api'
+          package-type: 'container'
+          min-versions-to-keep: 3
+          delete-only-untagged-versions: true
+
+      - name: Delete old versions (main)
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'cardactions-api'
+          package-type: 'container'
+          min-versions-to-keep: 3
+          delete-tags-regex: '^[0-9]+\.[0-9]+\.[0-9]+$' # Usuwa starsze wersje stable
+
+      - name: Delete old versions (develop)
+        uses: actions/delete-package-versions@v4
+        with:
+          package-name: 'cardactions-api'
+          package-type: 'container'
+          min-versions-to-keep: 3
+          delete-tags-regex: '^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$' # Usuwa starsze wersje beta
