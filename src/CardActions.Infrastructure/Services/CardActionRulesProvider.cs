@@ -1,44 +1,47 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using CardActions.Application.Services;
 using CardActions.Domain.Models;
+using CardActions.Domain.Policies;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 using System.Text;
-using CardActions.Infrastructure.Data.Entities;
 
 namespace CardActions.Infrastructure.Services;
 
 internal sealed class CardActionRulesProvider : ICardActionRulesProvider
 {
-    private readonly IReadOnlyList<CardActionRule> _rules;
+    private readonly IReadOnlyCollection<CardActions.Domain.Policies.CardActionRule> _rules;
+    private readonly IReadOnlyList<string> _allActionNames;
     private readonly ILogger<CardActionRulesProvider> _logger;
 
     public CardActionRulesProvider(string csvPath, ILogger<CardActionRulesProvider> logger)
     {
         _logger = logger;
         _rules = LoadRulesFromCsv(csvPath);
-        PrintLoadedRules();
-    }
-
-    public IReadOnlyList<string> GetAllowedActions(CardType cardType, CardStatus cardStatus, bool isPinSet)
-    {
-        var filteredActions = _rules
-            .Where(r => r.CardType == cardType
-                    && r.CardStatus == cardStatus
-                    && r.IsAllowed
-                    && (!r.RequiresPinSet.HasValue || r.RequiresPinSet.Value == isPinSet))
+        _allActionNames = _rules
             .Select(r => r.ActionName)
             .Distinct()
             .ToList();
-
-        _logger.LogDebug("Final allowed actions for CardType: {CardType}, CardStatus: {CardStatus}, IsPinSet: {IsPinSet}: [{Actions}]",
-            cardType, cardStatus, isPinSet, string.Join(", ", filteredActions));
-
-        return filteredActions;
+        
+        PrintLoadedRules();
     }
 
-    private IReadOnlyList<CardActionRule> LoadRulesFromCsv(string csvPath)
+    public IReadOnlyCollection<CardActions.Domain.Policies.CardActionRule> GetAllRules()
+    {
+        return _rules;
+    }
+
+    public IReadOnlyList<string> GetAllActionNames()
+    {
+        return _allActionNames;
+    }
+
+    private IReadOnlyCollection<CardActions.Domain.Policies.CardActionRule> LoadRulesFromCsv(string csvPath)
     {
         try
         {
@@ -51,7 +54,7 @@ internal sealed class CardActionRulesProvider : ICardActionRulesProvider
                 throw new FileNotFoundException($"CSV file not found at {absolutePath}");
             }
 
-            var rules = new List<CardActionRule>();
+            var rules = new List<CardActions.Domain.Policies.CardActionRule>();
 
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
@@ -106,14 +109,12 @@ internal sealed class CardActionRulesProvider : ICardActionRulesProvider
                             string value = recordDict[headers[cardStatusIndex]]?.ToString() ?? string.Empty;
                             var (isAllowed, requiresPinSet) = ParseRuleValue(value);
 
-                            rules.Add(new CardActionRule
-                            {
-                                ActionName = actionName,
-                                CardType = cardType,
-                                CardStatus = cardStatus,
-                                IsAllowed = isAllowed,
-                                RequiresPinSet = requiresPinSet
-                            });
+                            rules.Add(new CardActions.Domain.Policies.CardActionRule(
+                                actionName,
+                                cardType,
+                                cardStatus,
+                                isAllowed,
+                                requiresPinSet));
 
                             _logger.LogDebug("Loaded rule: {ActionName} -> Type: {CardType}, Status: {CardStatus}, Allowed: {IsAllowed}, RequiresPin: {RequiresPinSet}",
                                 actionName, cardType, cardStatus, isAllowed, requiresPinSet);

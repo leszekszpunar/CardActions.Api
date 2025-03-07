@@ -1,7 +1,14 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using CardActions.Application.Common.Exceptions;
 using CardActions.Application.Common.Interfaces;
 using CardActions.Application.Features.CardActions.Queries.GetAllowedCardActions;
 using CardActions.Application.Services;
 using CardActions.Domain.Models;
+using CardActions.Domain.Services;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
@@ -14,7 +21,7 @@ namespace CardActions.Unit.Tests.Features.CardActions;
 public class GetAllowedCardActionsTests
 {
     private readonly Mock<ICardService> _cardServiceMock;
-    private readonly Mock<ICardActionRulesProvider> _rulesProviderMock;
+    private readonly Mock<ICardActionService> _cardActionServiceMock;
     private readonly Mock<ILocalizationService> _localizationServiceMock;
     private readonly Mock<IValidator<GetAllowedCardActionsQuery>> _validatorMock;
     private readonly Mock<ILogger<GetAllowedCardActionsQueryHandler>> _loggerMock;
@@ -23,7 +30,7 @@ public class GetAllowedCardActionsTests
     public GetAllowedCardActionsTests()
     {
         _cardServiceMock = new Mock<ICardService>();
-        _rulesProviderMock = new Mock<ICardActionRulesProvider>();
+        _cardActionServiceMock = new Mock<ICardActionService>();
         _localizationServiceMock = new Mock<ILocalizationService>();
         _validatorMock = new Mock<IValidator<GetAllowedCardActionsQuery>>();
         _loggerMock = new Mock<ILogger<GetAllowedCardActionsQueryHandler>>();
@@ -35,12 +42,11 @@ public class GetAllowedCardActionsTests
 
         _handler = new GetAllowedCardActionsQueryHandler(
             _cardServiceMock.Object, 
-            _rulesProviderMock.Object,
+            _cardActionServiceMock.Object,
             _validatorMock.Object,
             _localizationServiceMock.Object,
             _loggerMock.Object);
     }
-
 
     [Fact]
     public async Task Handle_ForPrepaidCardInClosedStatus_ShouldReturnCorrectActions()
@@ -48,25 +54,30 @@ public class GetAllowedCardActionsTests
         // Arrange
         var userId = "testUser";
         var cardNumber = "testCard";
-        var expectedActions = new[] { "ACTION3", "ACTION4", "ACTION9" };
+        var expectedActionNames = new[] { "ACTION3", "ACTION4", "ACTION9" };
         var query = new GetAllowedCardActionsQuery(userId, cardNumber);
         var cardDetails = new CardDetails(cardNumber, CardType.Prepaid, CardStatus.Closed, true);
 
         _cardServiceMock.Setup(x => x.GetCardDetails(userId, cardNumber))
             .ReturnsAsync(cardDetails);
 
-        _rulesProviderMock.Setup(x => x.GetAllowedActions(
+        var cardActions = expectedActionNames.Select(name => CardAction.Create(name)).ToList();
+        _cardActionServiceMock.Setup(x => x.GetAllowedActions(
                 CardType.Prepaid, CardStatus.Closed, true))
-            .Returns(expectedActions);
+            .Returns(cardActions);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.AllowedActions.ShouldBe(expectedActions);
+        foreach (var expectedAction in expectedActionNames)
+        {
+            result.AllowedActions.ShouldContain(expectedAction);
+        }
+        result.AllowedActions.Count.ShouldBe(expectedActionNames.Length);
         _cardServiceMock.Verify(x => x.GetCardDetails(userId, cardNumber), Times.Once);
-        _rulesProviderMock.Verify(x => x.GetAllowedActions(
-            CardType.Prepaid, CardStatus.Closed, true), Times.Once);
+        _cardActionServiceMock.Verify(x => x.GetAllowedActions(
+            cardDetails.CardType, cardDetails.CardStatus, cardDetails.IsPinSet), Times.Once);
         _validatorMock.Verify(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -76,25 +87,30 @@ public class GetAllowedCardActionsTests
         // Arrange
         var userId = "testUser";
         var cardNumber = "testCard";
-        var expectedActions = new[] { "ACTION3", "ACTION4", "ACTION5", "ACTION6", "ACTION7", "ACTION8", "ACTION9" };
+        var expectedActionNames = new[] { "ACTION3", "ACTION4", "ACTION5", "ACTION6", "ACTION7", "ACTION8", "ACTION9" };
         var query = new GetAllowedCardActionsQuery(userId, cardNumber);
         var cardDetails = new CardDetails(cardNumber, CardType.Credit, CardStatus.Blocked, true);
 
         _cardServiceMock.Setup(x => x.GetCardDetails(userId, cardNumber))
             .ReturnsAsync(cardDetails);
 
-        _rulesProviderMock.Setup(x => x.GetAllowedActions(
+        var cardActions = expectedActionNames.Select(name => CardAction.Create(name)).ToList();
+        _cardActionServiceMock.Setup(x => x.GetAllowedActions(
                 CardType.Credit, CardStatus.Blocked, true))
-            .Returns(expectedActions);
+            .Returns(cardActions);
 
         // Act
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.AllowedActions.ShouldBe(expectedActions);
+        foreach (var expectedAction in expectedActionNames)
+        {
+            result.AllowedActions.ShouldContain(expectedAction);
+        }
+        result.AllowedActions.Count.ShouldBe(expectedActionNames.Length);
         _cardServiceMock.Verify(x => x.GetCardDetails(userId, cardNumber), Times.Once);
-        _rulesProviderMock.Verify(x => x.GetAllowedActions(
-            CardType.Credit, CardStatus.Blocked, true), Times.Once);
+        _cardActionServiceMock.Verify(x => x.GetAllowedActions(
+            cardDetails.CardType, cardDetails.CardStatus, cardDetails.IsPinSet), Times.Once);
         _validatorMock.Verify(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -111,15 +127,15 @@ public class GetAllowedCardActionsTests
 
         _localizationServiceMock.Setup(x => x.GetString("Error.CardNotFound.Title"))
             .Returns("Card not found");
-        _localizationServiceMock.Setup(x => x.GetString("Error.CardNotFound.Detail"))
-            .Returns("Card {CardNumber} for user {UserId} was not found");
+        _localizationServiceMock.Setup(x => x.GetString("Error.CardNotFound.Detail", It.IsAny<object[]>()))
+            .Returns("Card not found for specified user");
 
         // Act & Assert
-        await Should.ThrowAsync<Application.Common.Exceptions.NotFoundException>(
+        await Should.ThrowAsync<NotFoundException>(
             async () => await _handler.Handle(query, CancellationToken.None));
 
         _cardServiceMock.Verify(x => x.GetCardDetails(userId, cardNumber), Times.Once);
-        _rulesProviderMock.Verify(x => x.GetAllowedActions(
+        _cardActionServiceMock.Verify(x => x.GetAllowedActions(
             It.IsAny<CardType>(), It.IsAny<CardStatus>(), It.IsAny<bool>()), Times.Never);
         _validatorMock.Verify(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -146,7 +162,7 @@ public class GetAllowedCardActionsTests
             async () => await _handler.Handle(query, CancellationToken.None));
 
         _cardServiceMock.Verify(x => x.GetCardDetails(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        _rulesProviderMock.Verify(x => x.GetAllowedActions(
+        _cardActionServiceMock.Verify(x => x.GetAllowedActions(
             It.IsAny<CardType>(), It.IsAny<CardStatus>(), It.IsAny<bool>()), Times.Never);
     }
 } 

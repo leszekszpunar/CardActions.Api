@@ -1,9 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using CardActions.Domain.Models;
+using CardActions.Domain.Policies;
 using CardActions.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Shouldly;
-using System.IO;
 using Xunit;
 
 namespace CardActions.Unit.Tests.Services;
@@ -19,54 +23,38 @@ public class CardActionRulesProviderTests
         _csvPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/CardActions.Api/Resources/Allowed_Actions_Table.csv"));
     }
 
-    [Theory]
-    [InlineData(CardType.Prepaid, CardStatus.Closed, true, new[] { "ACTION3", "ACTION4", "ACTION9" })]
-    [InlineData(CardType.Credit, CardStatus.Blocked, true, new[] { "ACTION3", "ACTION4", "ACTION5", "ACTION6", "ACTION7", "ACTION8", "ACTION9" })]
-    [InlineData(CardType.Debit, CardStatus.Active, true, new[] { "ACTION1", "ACTION2", "ACTION3", "ACTION4", "ACTION6", "ACTION7", "ACTION8", "ACTION9", "ACTION10", "ACTION11", "ACTION12", "ACTION13" })]
-    [InlineData(CardType.Credit, CardStatus.Restricted, false, new[] { "ACTION3", "ACTION4", "ACTION5", "ACTION9" })]
-    public void GetAllowedActions_ForVariousCardTypesAndStatuses_ShouldReturnCorrectActions(
-        CardType cardType, 
-        CardStatus cardStatus, 
-        bool isPinSet, 
-        string[] expectedActions)
+    [Fact]
+    public void GetAllRules_ShouldReturnAllRulesFromCsv()
     {
         // Arrange
         var provider = new CardActionRulesProvider(_csvPath, _loggerMock.Object);
 
         // Act
-        var result = provider.GetAllowedActions(cardType, cardStatus, isPinSet);
+        var rules = provider.GetAllRules();
 
         // Assert
-        result.ShouldBe(expectedActions);
+        rules.ShouldNotBeEmpty();
+        rules.ShouldAllBe(r => r is CardActionRule);
+        rules.Select(r => r.ActionName).Distinct().Count().ShouldBeGreaterThan(1);
     }
 
-    [Theory]
-    [InlineData(CardType.Prepaid, CardStatus.Ordered, true)]
-    [InlineData(CardType.Prepaid, CardStatus.Ordered, false)]
-    [InlineData(CardType.Debit, CardStatus.Ordered, true)]
-    [InlineData(CardType.Debit, CardStatus.Ordered, false)]
-    [InlineData(CardType.Credit, CardStatus.Ordered, true)]
-    [InlineData(CardType.Credit, CardStatus.Ordered, false)]
-    public void GetAllowedActions_ForOrderedCards_ShouldHandlePinStatusCorrectly(
-        CardType cardType, 
-        CardStatus cardStatus, 
-        bool isPinSet)
+    [Fact]
+    public void GetAllActionNames_ShouldReturnDistinctActionNames()
     {
         // Arrange
         var provider = new CardActionRulesProvider(_csvPath, _loggerMock.Object);
+        var expectedActionCount = 13; // Zgodnie z tabelą w zadaniu
 
         // Act
-        var result = provider.GetAllowedActions(cardType, cardStatus, isPinSet);
+        var actionNames = provider.GetAllActionNames();
 
         // Assert
-        if (isPinSet)
-        {
-            result.ShouldNotContain("ACTION7"); // ACTION7 jest tylko dla kart bez PIN
-        }
-        else
-        {
-            result.ShouldNotContain("ACTION6"); // ACTION6 jest tylko dla kart z PIN
-        }
+        actionNames.Count.ShouldBe(expectedActionCount);
+        actionNames.Distinct().Count().ShouldBe(expectedActionCount);
+        actionNames.ShouldContain("ACTION1");
+        actionNames.ShouldContain("ACTION2");
+        actionNames.ShouldContain("ACTION3");
+        // ... i tak dalej
     }
 
     [Fact]
@@ -81,55 +69,33 @@ public class CardActionRulesProviderTests
     }
 
     [Theory]
-    [InlineData(CardType.Credit, CardStatus.Active)]
-    [InlineData(CardType.Debit, CardStatus.Active)]
     [InlineData(CardType.Prepaid, CardStatus.Active)]
-    public void GetAllowedActions_ForActiveCards_ShouldIncludeBasicActions(CardType cardType, CardStatus cardStatus)
+    [InlineData(CardType.Debit, CardStatus.Active)]
+    [InlineData(CardType.Credit, CardStatus.Active)]
+    public void GetAllRules_ShouldIncludeRulesForAllCardTypes(CardType cardType, CardStatus cardStatus)
     {
         // Arrange
         var provider = new CardActionRulesProvider(_csvPath, _loggerMock.Object);
-        var basicActions = new[] { "ACTION3", "ACTION4", "ACTION9" }; // Akcje dostępne dla wszystkich aktywnych kart
 
         // Act
-        var result = provider.GetAllowedActions(cardType, cardStatus, true);
+        var rules = provider.GetAllRules();
 
         // Assert
-        result.ShouldContain(x => basicActions.Contains(x));
-    }
-
-    [Theory]
-    [InlineData(CardStatus.Restricted)]
-    [InlineData(CardStatus.Blocked)]
-    [InlineData(CardStatus.Expired)]
-    [InlineData(CardStatus.Closed)]
-    public void GetAllowedActions_ForRestrictedStatuses_ShouldLimitActions(CardStatus restrictedStatus)
-    {
-        // Arrange
-        var provider = new CardActionRulesProvider(_csvPath, _loggerMock.Object);
-        var restrictedActions = new[] { "ACTION10", "ACTION11", "ACTION12", "ACTION13" }; // Akcje zazwyczaj niedostępne dla ograniczonych statusów
-
-        // Act
-        var result = provider.GetAllowedActions(CardType.Prepaid, restrictedStatus, true);
-
-        // Assert
-        result.ShouldNotContain(x => restrictedActions.Contains(x));
+        rules.ShouldContain(r => r.CardType == cardType && r.CardStatus == cardStatus);
     }
 
     [Fact]
-    public void GetAllowedActions_ForCreditCardSpecificActions_ShouldBeAvailableOnlyForCreditCards()
+    public void GetAllRules_ShouldIncludeRulesWithPinDependency()
     {
         // Arrange
         var provider = new CardActionRulesProvider(_csvPath, _loggerMock.Object);
-        var creditOnlyAction = "ACTION5"; // Akcja dostępna tylko dla kart kredytowych
 
-        // Act & Assert
-        var creditCardResult = provider.GetAllowedActions(CardType.Credit, CardStatus.Active, true);
-        creditCardResult.ShouldContain(creditOnlyAction);
+        // Act
+        var rules = provider.GetAllRules();
 
-        var debitCardResult = provider.GetAllowedActions(CardType.Debit, CardStatus.Active, true);
-        debitCardResult.ShouldNotContain(creditOnlyAction);
-
-        var prepaidCardResult = provider.GetAllowedActions(CardType.Prepaid, CardStatus.Active, true);
-        prepaidCardResult.ShouldNotContain(creditOnlyAction);
+        // Assert
+        rules.ShouldContain(r => r.RequiresPinSet.HasValue);
+        rules.ShouldContain(r => r.RequiresPinSet == true);
+        rules.ShouldContain(r => r.RequiresPinSet == false);
     }
 } 

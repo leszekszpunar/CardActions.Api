@@ -1,6 +1,9 @@
+using System.Collections.Generic;
+using System.Linq;
 using CardActions.Application.Services;
 using CardActions.Application.Common.Exceptions;
 using CardActions.Application.Common.Interfaces;
+using CardActions.Domain.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -14,20 +17,20 @@ internal sealed class GetAllowedCardActionsQueryHandler
     : IRequestHandler<GetAllowedCardActionsQuery, GetAllowedCardActionsResponse>
 {
     private readonly ICardService _cardService;
-    private readonly ICardActionRulesProvider _rulesProvider;
+    private readonly ICardActionService _cardActionService;
     private readonly IValidator<GetAllowedCardActionsQuery> _validator;
     private readonly ILocalizationService _localizationService;
     private readonly ILogger<GetAllowedCardActionsQueryHandler> _logger;
 
     public GetAllowedCardActionsQueryHandler(
         ICardService cardService,
-        ICardActionRulesProvider rulesProvider,
+        ICardActionService cardActionService,
         IValidator<GetAllowedCardActionsQuery> validator,
         ILocalizationService localizationService,
         ILogger<GetAllowedCardActionsQueryHandler> logger)
     {
         _cardService = cardService;
-        _rulesProvider = rulesProvider;
+        _cardActionService = cardActionService;
         _validator = validator;
         _localizationService = localizationService;
         _logger = logger;
@@ -63,14 +66,14 @@ internal sealed class GetAllowedCardActionsQueryHandler
         _logger.LogInformation("Card '{CardNumber}' found for user '{UserId}'. Type: {CardType}, Status: {CardStatus}, Has PIN: {IsPinSet}",
             cardDetails.CardNumber, request.UserId, cardDetails.CardType, cardDetails.CardStatus, cardDetails.IsPinSet);
 
-        var allowedActions = _rulesProvider.GetAllowedActions(
+        var allowedActions = _cardActionService.GetAllowedActions(
             cardDetails.CardType,
             cardDetails.CardStatus,
             cardDetails.IsPinSet);
 
         _logger.LogInformation("Allowed actions for card '{CardNumber}': {AllowedActions}", 
-            cardDetails.CardNumber, string.Join(", ", allowedActions));
+            cardDetails.CardNumber, string.Join(", ", allowedActions.Select(a => a.Name)));
 
-        return new GetAllowedCardActionsResponse(allowedActions);
+        return new GetAllowedCardActionsResponse(allowedActions.Select(a => a.Name).ToList());
     }
 }

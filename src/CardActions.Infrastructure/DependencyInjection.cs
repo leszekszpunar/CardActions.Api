@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using CardActions.Application.Services;
+using CardActions.Domain.Policies;
+using CardActions.Domain.Services;
 using CardActions.Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 
@@ -24,7 +26,7 @@ public static class DependencyInjection
         ConfigureSerilog(configuration);
 
         // Add domain services
-        services.AddDomain(configuration);
+        services.AddDomain();
         
         // Rejestracja inicjalizatora infrastruktury
 
@@ -38,6 +40,21 @@ public static class DependencyInjection
             new CardActionRulesProvider(csvPath, sp.GetRequiredService<ILogger<CardActionRulesProvider>>()));
             
         services.AddScoped<ICardService, CardService>();
+
+        // Rejestracja polityk domenowych
+        services.AddSingleton<ICardActionPolicy>(provider =>
+        {
+            var rulesProvider = provider.GetRequiredService<ICardActionRulesProvider>();
+            return new CardActionPolicy(rulesProvider.GetAllRules());
+        });
+
+        // Rejestracja serwisów domenowych
+        services.AddScoped<ICardActionService>(provider =>
+        {
+            var policy = provider.GetRequiredService<ICardActionPolicy>();
+            var rulesProvider = provider.GetRequiredService<ICardActionRulesProvider>();
+            return new CardActionService(policy, rulesProvider.GetAllActionNames());
+        });
 
         return services;
     }

@@ -1,14 +1,12 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CardActions.Domain;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddDomain(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddDomain(this IServiceCollection services)
     {
-        // Rejestracja serwisów domenowych
-
+        // Nie rejestrujemy CardActionService tutaj, ponieważ jest już zarejestrowany w warstwie infrastruktury
         return services;
     }
 }
