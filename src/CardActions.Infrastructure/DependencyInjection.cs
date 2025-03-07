@@ -33,11 +33,26 @@ public static class DependencyInjection
         // Rejestracja serwisów
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         
-        // Rejestracja CardActionRulesProvider z ścieżką do pliku CSV
-        var csvPath = configuration["CardActionRulesPath"] 
-            ?? throw new InvalidOperationException("CardActionRulesPath configuration is missing");
-        services.AddSingleton<ICardActionRulesProvider>(sp => 
-            new CardActionRulesProvider(csvPath, sp.GetRequiredService<ILogger<CardActionRulesProvider>>()));
+        // Wybór dostawcy reguł akcji (CSV lub JSON)
+        var useJsonProvider = configuration.GetValue<bool>("UseJsonRulesProvider");
+        if (useJsonProvider)
+        {
+            services.AddSingleton<ICardActionRulesProvider>(provider =>
+            {
+                var logger = provider.GetRequiredService<ILogger<JsonCardActionRulesProvider>>();
+                var jsonPath = Path.Combine(AppContext.BaseDirectory, "Resources", "card_actions_rules.json");
+                return new JsonCardActionRulesProvider(jsonPath, logger);
+            });
+        }
+        else
+        {
+            services.AddSingleton<ICardActionRulesProvider>(provider =>
+            {
+                var logger = provider.GetRequiredService<ILogger<CardActionRulesProvider>>();
+                var csvPath = Path.Combine(AppContext.BaseDirectory, "Resources", "card_actions_rules.csv");
+                return new CardActionRulesProvider(csvPath, logger);
+            });
+        }
             
         services.AddScoped<ICardService, CardService>();
 

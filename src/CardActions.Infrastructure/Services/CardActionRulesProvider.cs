@@ -13,15 +13,47 @@ using System.Text;
 
 namespace CardActions.Infrastructure.Services;
 
+/// <summary>
+/// Implementacja dostawcy reguł akcji karty, która wczytuje reguły z pliku CSV.
+/// Klasa ta odpowiada za wczytywanie i parsowanie reguł z pliku CSV oraz dostarczanie
+/// ich do warstwy domenowej.
+/// </summary>
 internal sealed class CardActionRulesProvider : ICardActionRulesProvider
 {
+    /// <summary>
+    /// Kolekcja reguł akcji karty.
+    /// </summary>
     private readonly IReadOnlyCollection<CardActions.Domain.Policies.CardActionRule> _rules;
+
+    /// <summary>
+    /// Lista wszystkich nazw akcji karty.
+    /// </summary>
     private readonly IReadOnlyList<string> _allActionNames;
+
+    /// <summary>
+    /// Logger używany do logowania informacji, ostrzeżeń i błędów.
+    /// </summary>
     private readonly ILogger<CardActionRulesProvider> _logger;
 
+    /// <summary>
+    /// Inicjalizuje nową instancję klasy <see cref="CardActionRulesProvider"/>.
+    /// </summary>
+    /// <param name="csvPath">Ścieżka do pliku CSV z regułami</param>
+    /// <param name="logger">Logger używany do logowania</param>
+    /// <exception cref="FileNotFoundException">Rzucany, gdy plik CSV nie istnieje</exception>
     public CardActionRulesProvider(string csvPath, ILogger<CardActionRulesProvider> logger)
     {
         _logger = logger;
+        
+        var absolutePath = Path.GetFullPath(csvPath);
+        _logger.LogInformation("Loading card action rules from path: {CsvPath} (absolute: {AbsolutePath})", csvPath, absolutePath);
+        
+        if (!File.Exists(absolutePath))
+        {
+            _logger.LogError("CSV file not found at {CsvPath}", absolutePath);
+            throw new FileNotFoundException($"CSV file not found at {absolutePath}", absolutePath);
+        }
+        
         _rules = LoadRulesFromCsv(csvPath);
         _allActionNames = _rules
             .Select(r => r.ActionName)
@@ -31,73 +63,93 @@ internal sealed class CardActionRulesProvider : ICardActionRulesProvider
         PrintLoadedRules();
     }
 
+    /// <summary>
+    /// Pobiera wszystkie reguły akcji karty.
+    /// </summary>
+    /// <returns>Kolekcja reguł akcji karty</returns>
     public IReadOnlyCollection<CardActions.Domain.Policies.CardActionRule> GetAllRules()
     {
         return _rules;
     }
 
+    /// <summary>
+    /// Pobiera wszystkie nazwy akcji karty.
+    /// </summary>
+    /// <returns>Lista nazw akcji karty</returns>
     public IReadOnlyList<string> GetAllActionNames()
     {
         return _allActionNames;
     }
 
+    /// <summary>
+    /// Wczytuje reguły akcji karty z pliku CSV.
+    /// </summary>
+    /// <param name="csvPath">Ścieżka do pliku CSV</param>
+    /// <returns>Kolekcja reguł akcji karty</returns>
+    /// <exception cref="InvalidOperationException">Rzucany, gdy nie udało się wczytać reguł z pliku CSV</exception>
     private IReadOnlyCollection<CardActions.Domain.Policies.CardActionRule> LoadRulesFromCsv(string csvPath)
     {
         try
         {
-            var absolutePath = Path.GetFullPath(csvPath);
-            _logger.LogInformation("Loading card action rules from path: {CsvPath} (absolute: {AbsolutePath})", csvPath, absolutePath);
-
-            if (!File.Exists(csvPath))
-            {
-                _logger.LogError("CSV file not found at {CsvPath}", absolutePath);
-                throw new FileNotFoundException($"CSV file not found at {absolutePath}");
-            }
-
             var rules = new List<CardActions.Domain.Policies.CardActionRule>();
-
-            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            
+            using (var reader = new StreamReader(csvPath, Encoding.UTF8))
+            using (var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)))
             {
-                Delimiter = ",",
-                Encoding = Encoding.UTF8,
-                HasHeaderRecord = true,
-                MissingFieldFound = null,
-                IgnoreBlankLines = true
-            };
-
-            using (var reader = new StreamReader(csvPath))
-            using (var csv = new CsvReader(reader, config))
-            {
-                var records = csv.GetRecords<dynamic>().ToList();
-
-                reader.BaseStream.Seek(0, SeekOrigin.Begin);
-                reader.DiscardBufferedData();
-                var headers = reader.ReadLine()?.Split(',');
-
-                if (headers == null || headers.Length < 3)
+                // Wczytaj nagłówki
+                csv.Read();
+                csv.ReadHeader();
+                var headers = csv.HeaderRecord;
+                
+                if (headers == null)
                 {
-                    throw new InvalidOperationException("Invalid CSV structure: Missing headers.");
+                    _logger.LogError("CSV file does not contain headers");
+                    throw new InvalidOperationException("CSV file does not contain headers");
                 }
-
-                int cardKindStartIndex = 1;
-                int cardStatusStartIndex = Array.IndexOf(headers, "ORDERED");
-
-                if (cardStatusStartIndex < 0)
+                
+                // Znajdź indeksy kolumn
+                var cardKindStartIndex = Array.FindIndex(headers, h => h == "PREPAID");
+                var cardStatusStartIndex = Array.FindIndex(headers, h => h == "ORDERED");
+                
+                if (cardKindStartIndex == -1 || cardStatusStartIndex == -1)
                 {
-                    throw new InvalidOperationException("Invalid CSV structure: Missing CARD STATUS section.");
+                    _logger.LogError("CSV file does not contain required headers: PREPAID or ORDERED");
+                    throw new InvalidOperationException("CSV file does not contain required headers: PREPAID or ORDERED");
                 }
-
-                foreach (var record in records)
+                
+                // Wczytaj rekordy
+                while (csv.Read())
                 {
+                    var record = csv.GetRecord<dynamic>();
                     var recordDict = (IDictionary<string, object>)record;
+                    
+                    if (!recordDict.ContainsKey("ALLOWED ACTION"))
+                    {
+                        _logger.LogWarning("Record does not contain 'ALLOWED ACTION' column, skipping");
+                        continue;
+                    }
+                    
                     string actionName = recordDict["ALLOWED ACTION"]?.ToString() ?? string.Empty;
+                    
+                    if (string.IsNullOrEmpty(actionName))
+                    {
+                        _logger.LogWarning("Record has empty action name, skipping");
+                        continue;
+                    }
 
                     foreach (var cardType in Enum.GetValues<CardType>())
                     {
                         var cardTypeIndex = cardKindStartIndex + (int)cardType;
                         if (cardTypeIndex >= headers.Length) continue;
+                        
+                        var cardTypeHeader = headers[cardTypeIndex];
+                        if (!recordDict.ContainsKey(cardTypeHeader))
+                        {
+                            _logger.LogWarning("Record does not contain '{CardTypeHeader}' column, skipping", cardTypeHeader);
+                            continue;
+                        }
 
-                        string cardTypeValue = recordDict[headers[cardTypeIndex]]?.ToString() ?? string.Empty;
+                        string cardTypeValue = recordDict[cardTypeHeader]?.ToString() ?? string.Empty;
                         bool isCardTypeAllowed = cardTypeValue.Equals("TAK", StringComparison.OrdinalIgnoreCase);
                         if (!isCardTypeAllowed) continue;
 
@@ -105,8 +157,15 @@ internal sealed class CardActionRulesProvider : ICardActionRulesProvider
                         {
                             var cardStatusIndex = cardStatusStartIndex + (int)cardStatus;
                             if (cardStatusIndex >= headers.Length) continue;
+                            
+                            var cardStatusHeader = headers[cardStatusIndex];
+                            if (!recordDict.ContainsKey(cardStatusHeader))
+                            {
+                                _logger.LogWarning("Record does not contain '{CardStatusHeader}' column, skipping", cardStatusHeader);
+                                continue;
+                            }
 
-                            string value = recordDict[headers[cardStatusIndex]]?.ToString() ?? string.Empty;
+                            string value = recordDict[cardStatusHeader]?.ToString() ?? string.Empty;
                             var (isAllowed, requiresPinSet) = ParseRuleValue(value);
 
                             rules.Add(new CardActions.Domain.Policies.CardActionRule(
@@ -129,27 +188,38 @@ internal sealed class CardActionRulesProvider : ICardActionRulesProvider
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading card action rules from {CsvPath}", csvPath);
-            throw;
+            throw new InvalidOperationException($"Failed to load card action rules from {csvPath}: {ex.Message}", ex);
         }
     }
 
-    internal static (bool isAllowed, bool? requiresPinSet) ParseRuleValue(string value)
+    /// <summary>
+    /// Parsuje wartość z pliku CSV i określa, czy akcja jest dozwolona i czy wymaga ustawionego PIN-u.
+    /// </summary>
+    /// <param name="value">Wartość z pliku CSV</param>
+    /// <returns>Tuple zawierający informację, czy akcja jest dozwolona i czy wymaga ustawionego PIN-u</returns>
+    public static (bool isAllowed, bool? requiresPinSet) ParseRuleValue(string value)
     {
         if (string.IsNullOrWhiteSpace(value) || value.Equals("NIE", StringComparison.OrdinalIgnoreCase))
             return (false, null);
 
-        if (value.Contains("pin nadany", StringComparison.OrdinalIgnoreCase))
-            return (true, true);
-
-        if (value.Contains("brak pin", StringComparison.OrdinalIgnoreCase))
-            return (true, false);
+        if (value.Equals("TAK", StringComparison.OrdinalIgnoreCase))
+            return (true, null);
 
         if (value.Contains("ale jak nie ma pin to NIE", StringComparison.OrdinalIgnoreCase))
-            return (false, false);
+            return (true, true);
 
-        return (value.StartsWith("TAK", StringComparison.OrdinalIgnoreCase), null);
+        if (value.Contains("jeżeli pin nadany", StringComparison.OrdinalIgnoreCase))
+            return (true, true);
+
+        if (value.Contains("jeżeli brak pin", StringComparison.OrdinalIgnoreCase))
+            return (true, false);
+
+        return (true, null);
     }
 
+    /// <summary>
+    /// Wyświetla załadowane reguły w logach (tylko w trybie Debug).
+    /// </summary>
     private void PrintLoadedRules()
     {
         foreach (var rule in _rules)

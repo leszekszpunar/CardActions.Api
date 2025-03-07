@@ -5,6 +5,8 @@ namespace CardActions.Domain.Services;
 
 /// <summary>
 /// Definiuje serwis domenowy do zarządzania akcjami karty.
+/// Interfejs ten jest częścią warstwy domenowej i definiuje kontrakt dla serwisu,
+/// który dostarcza funkcjonalności związane z akcjami karty.
 /// </summary>
 public interface ICardActionService
 {

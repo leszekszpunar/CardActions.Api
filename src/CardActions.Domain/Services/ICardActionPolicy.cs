@@ -4,6 +4,8 @@ namespace CardActions.Domain.Services;
 
 /// <summary>
 /// Definiuje politykę określającą, które akcje są dozwolone dla danej karty.
+/// Interfejs ten jest częścią warstwy domenowej i definiuje kontrakt dla polityki,
+/// która egzekwuje reguły biznesowe dotyczące dozwolonych akcji dla kart.
 /// </summary>
 public interface ICardActionPolicy
 {

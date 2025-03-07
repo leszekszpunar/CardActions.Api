@@ -5,6 +5,8 @@ namespace CardActions.Application.Services;
 
 /// <summary>
 /// Definiuje dostawcę reguł akcji karty.
+/// Interfejs ten jest częścią warstwy aplikacji i definiuje kontrakt dla dostawcy,
+/// który dostarcza reguły akcji karty do warstwy domenowej.
 /// </summary>
 public interface ICardActionRulesProvider
 {

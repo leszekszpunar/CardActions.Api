@@ -78,7 +78,7 @@ public class CardActionsControllerTests : IClassFixture<CustomWebApplicationFact
     [Theory]
     [InlineData("TAK", true, null)]
     [InlineData("NIE", false, null)]
-    [InlineData("TAK - ale jak nie ma pin to NIE", false, false)]
+    [InlineData("TAK - ale jak nie ma pin to NIE", true, true)]
     [InlineData("TAK - jeżeli pin nadany", true, true)]
     [InlineData("TAK - jeżeli brak pin", true, false)]
     public void ParseRuleValue_ShouldReturnCorrectValues(string value, bool expectedIsAllowed, bool? expectedRequiresPin)
