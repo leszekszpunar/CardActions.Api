@@ -96,7 +96,7 @@ internal sealed class GetAllowedCardActionsQueryHandler
         }
 
         _logger.LogInformation(
-            "Card '{CardNumber}' found for user '{UserId}'. Type: {CardType}, Status: {CardStatus}, Has PIN: {IsPinSet}",
+            "Card '{CardNumber}' found for user '{UserId}'. Type: {CardType}, Status: {CardStatus}, HasPin: {IsPinSet}",
             cardDetails.CardNumber, request.UserId, cardDetails.CardType, cardDetails.CardStatus, cardDetails.IsPinSet);
 
         var allowedActions = _cardActionService.GetAllowedActions(

@@ -1,0 +1,7 @@
+# Wszyscy właściciele (admini) repozytorium muszą zatwierdzić wszelkie zmiany
+* @${{ github.repository_owner }}
+
+# Szczególnie chronione pliki
+/.github/ @${{ github.repository_owner }}
+/.github/workflows/ @${{ github.repository_owner }}
+/src/ @${{ github.repository_owner }} 

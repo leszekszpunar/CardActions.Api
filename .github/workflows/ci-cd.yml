@@ -8,21 +8,6 @@ on:
       - '.gitignore'
       - '.editorconfig'
       - 'docs/**'
-  workflow_dispatch:
-    inputs:
-      reason:
-        description: 'Reason for manual trigger'
-        required: false
-        default: 'Manual deployment'
-      force_version:
-        description: 'Force specific version (leave empty for auto)'
-        required: false
-        default: ''
-      skip_tests:
-        description: 'Skip tests'
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: write
@@ -51,11 +36,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Display manual trigger reason
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "::notice title=Manual Trigger::Workflow triggered manually with reason: ${{ github.event.inputs.reason || 'No reason provided' }}"
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -65,11 +45,7 @@ jobs:
         run: |
           dotnet restore
           dotnet build --no-restore --configuration Release
-          if [[ "${{ github.event.inputs.skip_tests }}" != "true" ]]; then
-            dotnet test --no-build --configuration Release
-          else
-            echo "Skipping tests as requested"
-          fi
+          dotnet test --no-build --configuration Release
           dotnet publish src/CardActions.Api/CardActions.Api.csproj -c Release -o publish
 
       - name: Upload build artifact
@@ -113,17 +89,28 @@ jobs:
             @semantic-release/changelog \
             @semantic-release/git
 
+      - name: Debug Environment
+        run: |
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+          echo "github.ref: ${{ github.ref }}"
+          echo "github.ref_name: ${{ github.ref_name }}"
+          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
+
       - name: Semantic Release
         id: semantic
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
-          # Check if force_version is provided
-          if [[ -n "${{ github.event.inputs.force_version }}" ]]; then
-            echo "Using forced version: ${{ github.event.inputs.force_version }}"
-            echo "new_release_version=${{ github.event.inputs.force_version }}" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+          # Debug semantic-release configuration
+          echo "Semantic Release Configuration:"
+          cat .releaserc.json
+          
+          # Debug environment variables
+          echo "Environment Variables:"
+          echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
           
           # Enable debug mode for semantic-release
           export DEBUG=semantic-release:*
