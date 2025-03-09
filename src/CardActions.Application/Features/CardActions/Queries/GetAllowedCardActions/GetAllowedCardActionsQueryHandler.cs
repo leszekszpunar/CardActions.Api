@@ -12,16 +12,16 @@ namespace CardActions.Application.Features.CardActions.Queries.GetAllowedCardAct
 ///     Obsługuje zapytanie o dozwolone akcje dla danej karty użytkownika.
 ///     Proces biznesowy:
 ///     1. Walidacja danych wejściowych
-///        - Sprawdza poprawność identyfikatora użytkownika i numeru karty
-///        - Jeśli dane są niepoprawne, przerywa proces
+///     - Sprawdza poprawność identyfikatora użytkownika i numeru karty
+///     - Jeśli dane są niepoprawne, przerywa proces
 ///     2. Pobranie szczegółów karty
-///        - Pobiera informacje o karcie użytkownika
-///        - Sprawdza czy karta istnieje
-///        - Jeśli karta nie istnieje, zwraca błąd z odpowiednim komunikatem
+///     - Pobiera informacje o karcie użytkownika
+///     - Sprawdza czy karta istnieje
+///     - Jeśli karta nie istnieje, zwraca błąd z odpowiednim komunikatem
 ///     3. Określenie dozwolonych akcji
-///        - Na podstawie typu karty, statusu i ustawienia PIN-u
-///        - Pobiera listę dozwolonych akcji
-///        - Zwraca nazwy dozwolonych akcji użytkownikowi
+///     - Na podstawie typu karty, statusu i ustawienia PIN-u
+///     - Pobiera listę dozwolonych akcji
+///     - Zwraca nazwy dozwolonych akcji użytkownikowi
 /// </summary>
 internal sealed class GetAllowedCardActionsQueryHandler
     : IRequestHandler<GetAllowedCardActionsQuery, GetAllowedCardActionsResponse>
@@ -33,7 +33,7 @@ internal sealed class GetAllowedCardActionsQueryHandler
     private readonly IValidator<GetAllowedCardActionsQuery> _validator;
 
     /// <summary>
-    ///     Inicjalizuje nową instancję klasy <see cref="GetAllowedCardActionsQueryHandler"/>.
+    ///     Inicjalizuje nową instancję klasy <see cref="GetAllowedCardActionsQueryHandler" />.
     /// </summary>
     /// <param name="cardService">Serwis do pobierania informacji o kartach</param>
     /// <param name="cardActionService">Serwis do pobierania dozwolonych akcji dla kart</param>

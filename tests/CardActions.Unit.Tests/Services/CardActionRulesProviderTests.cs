@@ -26,10 +26,7 @@ public class CardActionRulesProviderTests
         _loggerMock = new Mock<ILogger<CardActionRulesProvider>>();
 
         // Sprawdzenie, czy plik CSV istnieje
-        if (!File.Exists(CsvPath))
-        {
-            throw new FileNotFoundException($"Plik CSV z regułami nie istnieje: {CsvPath}");
-        }
+        if (!File.Exists(CsvPath)) throw new FileNotFoundException($"Plik CSV z regułami nie istnieje: {CsvPath}");
 
         // Wczytanie reguł z pliku CSV
         var csvLoaderLogger = new Mock<ILogger<CsvCardActionRulesLoader>>();
@@ -90,12 +87,12 @@ public class CardActionRulesProviderTests
     {
         // Arrange
         var provider = new CardActionRulesProvider(_rulesLoaderMock.Object, _loggerMock.Object);
-        
+
         // Act
         var allowedActions = provider.GetAllRules()
-            .Where(r => r.CardType == cardType && 
-                        r.CardStatus == cardStatus && 
-                        r.IsAllowed && 
+            .Where(r => r.CardType == cardType &&
+                        r.CardStatus == cardStatus &&
+                        r.IsAllowed &&
                         (!r.RequiresPinSet.HasValue || r.RequiresPinSet.Value == isPinSet))
             .Select(r => r.ActionName)
             .Distinct()

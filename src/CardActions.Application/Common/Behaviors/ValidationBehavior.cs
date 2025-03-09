@@ -7,14 +7,13 @@ namespace CardActions.Application.Common.Behaviors;
 ///     Zachowanie potoku MediatR, które wykonuje walidację żądania przed jego obsługą.
 ///     Proces biznesowy:
 ///     1. Przygotowanie walidacji
-///        - Zbiera wszystkie zarejestrowane walidatory dla danego typu żądania
+///     - Zbiera wszystkie zarejestrowane walidatory dla danego typu żądania
 ///     2. Wykonanie walidacji
-///        - Uruchamia wszystkie walidatory równolegle
-///        - Zbiera wyniki walidacji
+///     - Uruchamia wszystkie walidatory równolegle
+///     - Zbiera wyniki walidacji
 ///     3. Obsługa wyników
-///        - Jeśli są błędy, przerywa proces i zwraca informacje o błędach
-///        - Jeśli nie ma błędów, przekazuje żądanie dalej w potoku
-///     
+///     - Jeśli są błędy, przerywa proces i zwraca informacje o błędach
+///     - Jeśli nie ma błędów, przekazuje żądanie dalej w potoku
 ///     Implementuje wzorzec projektowy Decorator, który dodaje funkcjonalność walidacji
 ///     do istniejącego potoku obsługi żądań.
 /// </summary>
@@ -26,7 +25,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
     private readonly IEnumerable<IValidator<TRequest>> _validators;
 
     /// <summary>
-    ///     Inicjalizuje nową instancję klasy <see cref="ValidationBehavior{TRequest,TResponse}"/>.
+    ///     Inicjalizuje nową instancję klasy <see cref="ValidationBehavior{TRequest,TResponse}" />.
     /// </summary>
     /// <param name="validators">Kolekcja walidatorów dla danego typu żądania</param>
     public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators)

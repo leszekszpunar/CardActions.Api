@@ -9,27 +9,24 @@ namespace CardActions.Infrastructure.Services;
 ///     Implementacja dostawcy reguł akcji karty.
 ///     Proces biznesowy:
 ///     1. Inicjalizacja
-///        - Wczytuje reguły z zewnętrznego źródła (np. pliku CSV)
-///        - Tworzy listę wszystkich dostępnych akcji
+///     - Wczytuje reguły z zewnętrznego źródła (np. pliku CSV)
+///     - Tworzy listę wszystkich dostępnych akcji
 ///     2. Zarządzanie regułami
-///        - Przechowuje reguły w pamięci
-///        - Udostępnia metody do pobierania wszystkich reguł
-///        - Udostępnia metody do pobierania nazw wszystkich akcji
+///     - Przechowuje reguły w pamięci
+///     - Udostępnia metody do pobierania wszystkich reguł
+///     - Udostępnia metody do pobierania nazw wszystkich akcji
 ///     3. Monitorowanie
-///        - Loguje informacje o załadowanych regułach
-///        - Ułatwia debugowanie i monitorowanie systemu
-///     
+///     - Loguje informacje o załadowanych regułach
+///     - Ułatwia debugowanie i monitorowanie systemu
 ///     Wzorce projektowe:
 ///     - Repository Pattern: Ta klasa działa jako repozytorium reguł akcji karty,
 ///     oddzielając logikę dostępu do danych od logiki biznesowej.
 ///     - Dependency Injection: Loader reguł jest wstrzykiwany przez konstruktor, co ułatwia testowanie.
-///     
 ///     Zalety:
 ///     - Odseparowanie dostępu do danych od logiki biznesowej
 ///     - Elastyczność źródła danych (można łatwo zmienić na inny format pliku lub bazę danych)
 ///     - Centralne miejsce do zarządzania regułami
 ///     - Obsługa błędów i logowanie
-///     
 ///     Zasady SOLID:
 ///     - Single Responsibility: Klasa ma jedno zadanie - dostarczanie reguł
 ///     - Open/Closed: Można rozszerzyć funkcjonalność bez modyfikacji istniejącego kodu

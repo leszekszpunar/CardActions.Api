@@ -4,16 +4,13 @@ namespace CardActions.Domain.Models;
 
 /// <summary>
 ///     Reprezentuje kartę płatniczą jako główny obiekt domenowy (potencjalny Aggregate Root).
-///     
 ///     UWAGA: Ta klasa jest przykładem/dokumentacją pokazującą, jak w przyszłości
 ///     powinien wyglądać model domeny przy rozszerzaniu funkcjonalności systemu.
-///     
 ///     Obecnie system jest read-only, ale w przyszłości może obsługiwać:
 ///     - Zmianę statusu karty
 ///     - Ustawianie/zmianę PIN-u
 ///     - Blokowanie/odblokowywanie karty
 ///     - Śledzenie historii zmian
-///     
 ///     Wzorce DDD, które będą potrzebne:
 ///     - Aggregate Root: Card jako główny punkt dostępu do powiązanych obiektów
 ///     - Entity: Karta ma swoją tożsamość (CardNumber) niezależną od innych atrybutów
@@ -24,9 +21,22 @@ public class Card
 {
     // Private backing fields dla enkapsulacji
     private readonly List<CardAction> _allowedActions;
-    private CardStatus _status;
-    private bool _isPinSet;
     private readonly List<string> _statusHistory;
+
+    /// <summary>
+    ///     Tworzy nową instancję karty.
+    ///     W przyszłości: Fabryka może być odpowiedzialna za tworzenie kart.
+    /// </summary>
+    private Card(string cardNumber, string userId, CardType type)
+    {
+        CardNumber = cardNumber;
+        UserId = userId;
+        Type = type;
+        Status = CardStatus.Inactive;
+        IsPinSet = false;
+        _allowedActions = new List<CardAction>();
+        _statusHistory = new List<string> { $"Card created with status {Status}" };
+    }
 
     /// <summary>
     ///     Unikalny numer karty, który identyfikuje ją w systemie.
@@ -46,12 +56,12 @@ public class Card
     /// <summary>
     ///     Aktualny status karty (tylko do odczytu, zmiana przez dedykowane metody).
     /// </summary>
-    public CardStatus Status => _status;
+    public CardStatus Status { get; private set; }
 
     /// <summary>
     ///     Czy PIN jest ustawiony (tylko do odczytu, zmiana przez dedykowane metody).
     /// </summary>
-    public bool IsPinSet => _isPinSet;
+    public bool IsPinSet { get; private set; }
 
     /// <summary>
     ///     Lista dozwolonych akcji (tylko do odczytu).
@@ -62,21 +72,6 @@ public class Card
     ///     Historia zmian statusów karty (tylko do odczytu).
     /// </summary>
     public ReadOnlyCollection<string> StatusHistory => _statusHistory.AsReadOnly();
-
-    /// <summary>
-    ///     Tworzy nową instancję karty.
-    ///     W przyszłości: Fabryka może być odpowiedzialna za tworzenie kart.
-    /// </summary>
-    private Card(string cardNumber, string userId, CardType type)
-    {
-        CardNumber = cardNumber;
-        UserId = userId;
-        Type = type;
-        _status = CardStatus.Inactive;
-        _isPinSet = false;
-        _allowedActions = new List<CardAction>();
-        _statusHistory = new List<string> { $"Card created with status {_status}" };
-    }
 
     /// <summary>
     ///     Zmienia status karty.
@@ -124,8 +119,8 @@ public class Card
         IEnumerable<CardAction> allowedActions)
     {
         var card = new Card(cardNumber, userId, type);
-        card._status = status;
-        card._isPinSet = isPinSet;
+        card.Status = status;
+        card.IsPinSet = isPinSet;
         card._allowedActions.AddRange(allowedActions);
         return card;
     }
@@ -169,4 +164,4 @@ public class Card
         // 3. Publikacja eventu CardCreated
         throw new NotImplementedException("Feature planned for future implementation");
     }
-} 
+}

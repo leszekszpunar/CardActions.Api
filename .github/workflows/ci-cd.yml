@@ -342,7 +342,7 @@ jobs:
           name: deployment-config-${{ needs.release.outputs.channel }}
           path: deployment.json
           retention-days: 30
-          
+
       - name: Create Deployment Tag
         uses: actions/github-script@v6
         with:
@@ -402,7 +402,7 @@ jobs:
           min-versions-to-keep: 5
           delete-only-pre-release-versions: true
           ignore-versions: '^latest$|^beta$'
-          
+
       - name: Delete old package with incorrect name format
         uses: actions/github-script@v6
         with:
@@ -417,22 +417,22 @@ jobs:
                 package_type: 'container',
                 org: owner
               });
-              
+            
               // Find the package with the old name format
               const oldPackage = packages.data.find(pkg => 
                 pkg.name === 'cardactions.api/cardactions-api' || 
                 pkg.name.includes('cardactions.api'));
-              
+            
               if (oldPackage) {
                 console.log(`Found old package: ${oldPackage.name}`);
-                
+            
                 // Delete the package
                 await github.rest.packages.deletePackageForOrg({
                   package_type: 'container',
                   package_name: oldPackage.name,
                   org: owner
                 });
-                
+            
                 console.log(`Successfully deleted old package: ${oldPackage.name}`);
               } else {
                 console.log('No old package with incorrect name format found.');

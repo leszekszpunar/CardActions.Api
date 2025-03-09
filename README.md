@@ -24,10 +24,10 @@ tests/
 
 - **Clean Architecture** - separacja warstw i zależności
 - **Domain-Driven Design** - implementacja wzorców DDD:
-  - Value Objects (CardAction, CardActionRule)
-  - Domain Services (ICardActionService)
-  - Domain Policies (CardActionPolicy)
-  - Bounded Context (Card Actions)
+    - Value Objects (CardAction, CardActionRule)
+    - Domain Services (ICardActionService)
+    - Domain Policies (CardActionPolicy)
+    - Bounded Context (Card Actions)
 - **CQRS** - rozdzielenie operacji odczytu i zapisu
 - **Walidacja fluent** - walidacja requestów z wykorzystaniem FluentValidation
 - **Lokalizacja** - wsparcie dla wielu języków (pl, en)
@@ -42,28 +42,29 @@ tests/
 System składa się z następujących kluczowych komponentów:
 
 1. **Handler akcji karty** - obsługuje zapytania o dozwolone akcje:
-   - Walidacja danych wejściowych
-   - Weryfikacja istnienia karty
-   - Określanie dostępnych akcji
+    - Walidacja danych wejściowych
+    - Weryfikacja istnienia karty
+    - Określanie dostępnych akcji
 
 2. **Polityka akcji** - definiuje reguły biznesowe:
-   - Weryfikacja warunków dla akcji
-   - Sprawdzanie wymagań PIN-u
-   - Zarządzanie regułami dostępu
+    - Weryfikacja warunków dla akcji
+    - Sprawdzanie wymagań PIN-u
+    - Zarządzanie regułami dostępu
 
 3. **Provider reguł** - zarządza konfiguracją akcji:
-   - Wczytywanie reguł z pliku CSV
-   - Przechowywanie reguł w pamięci
-   - Monitorowanie zmian reguł
+    - Wczytywanie reguł z pliku CSV
+    - Przechowywanie reguł w pamięci
+    - Monitorowanie zmian reguł
 
 4. **Walidacja żądań** - zapewnia poprawność danych:
-   - Równoległa walidacja przez wiele walidatorów
-   - Wczesne wykrywanie błędów
-   - Spójne komunikaty błędów
+    - Równoległa walidacja przez wiele walidatorów
+    - Wczesne wykrywanie błędów
+    - Spójne komunikaty błędów
 
 ## 🚀 Deployment
 
 Projekt wykorzystuje:
+
 - GitHub Actions do CI/CD
 - Semantic versioning dla wersjonowania
 - Docker i GitHub Container Registry
@@ -114,13 +115,17 @@ Projekt używa conventional commits do automatycznego wersjonowania:
 Projekt zawiera trzy rodzaje testów:
 
 ### Unit Testy
+
 Testy jednostkowe sprawdzające logikę biznesową i komponenty w izolacji.
 
 ### Testy Integracyjne
+
 Testy weryfikujące współpracę między komponentami i integrację z zewnętrznymi systemami.
 
 ### Testy Architektury
+
 Automatyczne testy weryfikujące zgodność z założeniami architektonicznymi:
+
 - Poprawność zależności między warstwami
 - Zgodność z konwencjami nazewniczymi
 - Prawidłowe użycie wzorców (CQRS, Clean Architecture)

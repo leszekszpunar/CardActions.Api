@@ -1,5 +1,4 @@
 using CardActions.Application.Services;
-using CardActions.Domain.Models;
 using CardActions.Domain.Policies;
 using CardActions.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
@@ -20,12 +19,12 @@ public class TestCardActionRulesProvider : ICardActionRulesProvider
         // Ścieżka do pliku CSV
         var csvPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
             "../../../../../src/CardActions.Api/Resources/Allowed_Actions_Table.csv"));
-        
+
         // Wczytanie reguł z pliku CSV
         var logger = new Mock<ILogger<CsvCardActionRulesLoader>>().Object;
         var loader = new CsvCardActionRulesLoader(csvPath, logger);
         _rules = loader.LoadRules();
-        
+
         _allActionNames = _rules
             .Select(r => r.ActionName)
             .Distinct()
