@@ -21,7 +21,9 @@ public static class LocalizationExtensions
         {
             var supportedCultures = new[]
             {
+                new CultureInfo("pl"),
                 new CultureInfo("pl-PL"),
+                new CultureInfo("en"),
                 new CultureInfo("en-US")
             };
 
