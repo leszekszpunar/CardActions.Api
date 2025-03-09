@@ -21,7 +21,7 @@ internal class StringLocalizerWrapper : ILocalizationService
         _resourcesPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources/Languages");
         _cache = cache;
         _logger = logger;
-        
+
         // Log dostępnych plików lokalizacji
         if (Directory.Exists(_resourcesPath))
         {
@@ -44,7 +44,7 @@ internal class StringLocalizerWrapper : ILocalizationService
         var culture = CultureInfo.CurrentUICulture.Name;
         var translations = LoadTranslations(culture);
 
-        if (translations.TryGetValue(key, out var value)) 
+        if (translations.TryGetValue(key, out var value))
             return args.Length > 0 ? string.Format(value, args) : value;
 
         // Jeśli nie znaleziono, próbujemy użyć kodu języka bez regionu (pl-PL -> pl)
@@ -95,7 +95,8 @@ internal class StringLocalizerWrapper : ILocalizationService
             }
             catch (Exception ex)
             {
-                _logger.LogError("Unexpected error reading localization file {FilePath}: {Message}", filePath, ex.Message);
+                _logger.LogError("Unexpected error reading localization file {FilePath}: {Message}", filePath,
+                    ex.Message);
                 return new Dictionary<string, string>();
             }
         }) ?? new Dictionary<string, string>();
