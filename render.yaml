@@ -1,12 +1,12 @@
 services:
-  # Produkcja - używa gałęzi main
+  # Produkcja - używa obrazu z tagiem latest
   - type: web
     name: cardactions-api-latest
-    runtime: docker
-    repo: https://github.com/leszekszpunar/CardActions.Api
+    runtime: image
+    image:
+      url: ghcr.io/leszekszpunar/cardactions-api:latest
     region: frankfurt
     plan: free
-    branch: main
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
@@ -29,14 +29,14 @@ services:
     domains:
       - cardactions-api-latest.onrender.com
 
-  # Development - używa gałęzi develop
+  # Development - używa obrazu z tagiem beta
   - type: web
     name: cardactions-api-beta
-    runtime: docker
-    repo: https://github.com/leszekszpunar/CardActions.Api
+    runtime: image
+    image:
+      url: ghcr.io/leszekszpunar/cardactions-api:beta
     region: frankfurt
     plan: free
-    branch: develop
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
