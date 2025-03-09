@@ -320,7 +320,8 @@ jobs:
             "environment": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
             "dockerImage": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}",
             "deploymentUrl": "${{ steps.deploy.outputs.service_url }}",
-            "docsUrl": "$DOCS_URL"
+            "docsUrl": "$DOCS_URL",
+            "note": "Application is hosted on Render.com free tier and may sleep after 15 minutes of inactivity. First request after inactivity may take up to 30 seconds to respond."
           }
           EOF
           
@@ -334,6 +335,7 @@ jobs:
           echo "✅ Docker Image: ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
           echo "✅ Deployment URL: ${{ steps.deploy.outputs.service_url }}"
           echo "✅ Documentation URL: $DOCS_URL"
+          echo "✅ Note: Application may sleep after 15 minutes of inactivity"
           echo "========================================"
 
       - name: Upload Deployment Config
