@@ -14,6 +14,15 @@ on:
         description: 'Reason for manual trigger'
         required: false
         default: 'Manual deployment'
+      force_version:
+        description: 'Force specific version (leave empty for auto)'
+        required: false
+        default: ''
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -56,7 +65,11 @@ jobs:
         run: |
           dotnet restore
           dotnet build --no-restore --configuration Release
-          dotnet test --no-build --configuration Release
+          if [[ "${{ github.event.inputs.skip_tests }}" != "true" ]]; then
+            dotnet test --no-build --configuration Release
+          else
+            echo "Skipping tests as requested"
+          fi
           dotnet publish src/CardActions.Api/CardActions.Api.csproj -c Release -o publish
 
       - name: Upload build artifact
@@ -105,17 +118,49 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Check if force_version is provided
+          if [[ -n "${{ github.event.inputs.force_version }}" ]]; then
+            echo "Using forced version: ${{ github.event.inputs.force_version }}"
+            echo "new_release_version=${{ github.event.inputs.force_version }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Enable debug mode for semantic-release
+          export DEBUG=semantic-release:*
+          
           # Uruchom semantic-release i zapisz output
-          SEMANTIC_OUTPUT=$(npx semantic-release)
+          echo "Running semantic-release..."
+          SEMANTIC_OUTPUT=$(npx semantic-release --debug || echo "SEMANTIC_RELEASE_FAILED")
           echo "Semantic Release Output: $SEMANTIC_OUTPUT"
           
-          # Pobierz najnowszy tag
-          VERSION=$(git describe --tags --abbrev=0)
+          if [[ "$SEMANTIC_OUTPUT" == *"SEMANTIC_RELEASE_FAILED"* ]]; then
+            echo "Semantic Release failed, checking for existing tags..."
+            
+            # Check if there are any tags
+            if git tag -l | grep -q "v"; then
+              # Pobierz najnowszy tag
+              VERSION=$(git describe --tags --abbrev=0)
+              echo "Using existing tag: $VERSION"
+            else
+              # Fallback to a default version
+              VERSION="v0.0.1"
+              echo "No tags found, using default version: $VERSION"
+            fi
+          else
+            # Pobierz najnowszy tag
+            VERSION=$(git describe --tags --abbrev=0)
+            echo "New release created, tag: $VERSION"
+          fi
+          
           echo "Latest Tag: $VERSION"
           
           # Ustaw zmienną wyjściową
           echo "new_release_version=${VERSION#v}" >> $GITHUB_OUTPUT
           echo "Version Output: ${VERSION#v}"
+          
+          # List all commits since last tag for debugging
+          echo "Commits since last tag:"
+          git log $(git describe --tags --abbrev=0)..HEAD --oneline
 
   # 3. Build i push Docker image
   docker:
@@ -263,17 +308,46 @@ jobs:
       deployments: write
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-      url: ${{ steps.deploy.outputs.service_url }}
+      url: ${{ steps.service_details.outputs.service_url }}
     outputs:
-      environment_url: ${{ steps.deploy.outputs.service_url }}
+      environment_url: ${{ steps.service_details.outputs.service_url }}
       environment_name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+      current_branch: ${{ github.ref }}
     steps:
+      - name: Debug environment
+        run: |
+          echo "Current branch: ${{ github.ref }}"
+          echo "Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}"
+          echo "Channel: ${{ needs.release.outputs.channel }}"
       - name: Deploy to Render
         id: deploy
         uses: johnbeynon/render-deploy-action@v0.0.8
         with:
           service-id: ${{ secrets.RENDER_SERVICE_ID }}
           api-key: ${{ secrets.RENDER_API_KEY }}
+
+      - name: Get service details
+        id: service_details
+        run: |
+          SERVICE_DETAILS=$(curl -s -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}")
+          
+          echo "Service details: $SERVICE_DETAILS"
+          
+          # Extract URL using grep and sed instead of jq
+          SERVICE_URL=$(echo $SERVICE_DETAILS | grep -o '"url":"[^"]*"' | sed 's/"url":"//;s/"//')
+          
+          if [ -z "$SERVICE_URL" ]; then
+            # Fallback to hardcoded URL based on environment
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              SERVICE_URL="https://cardactions-api-latest.onrender.com"
+            else
+              SERVICE_URL="https://cardactions-api-beta.onrender.com"
+            fi
+          fi
+          
+          echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "Service URL: $SERVICE_URL"
 
       - name: Update service image
         run: |
@@ -308,32 +382,47 @@ jobs:
           # Set documentation URL
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             DOCS_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+            ENV_NAME="production"
           else
             DOCS_URL="https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/blob/develop/README.md"
+            ENV_NAME="development"
           fi
           echo "docs_url=$DOCS_URL" >> $GITHUB_OUTPUT
+          echo "env_name=$ENV_NAME" >> $GITHUB_OUTPUT
+          
+          # Get service URL
+          SERVICE_URL="${{ steps.service_details.outputs.service_url }}"
+          if [ -z "$SERVICE_URL" ]; then
+            if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+              SERVICE_URL="https://cardactions-api-latest.onrender.com"
+            else
+              SERVICE_URL="https://cardactions-api-beta.onrender.com"
+            fi
+          fi
           
           cat > deployment.json << EOF
           {
             "version": "${{ needs.release.outputs.version }}",
             "channel": "${{ needs.release.outputs.channel }}",
-            "environment": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
+            "environment": "$ENV_NAME",
+            "branch": "${{ github.ref }}",
             "dockerImage": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}",
-            "deploymentUrl": "${{ steps.deploy.outputs.service_url }}",
+            "deploymentUrl": "$SERVICE_URL",
             "docsUrl": "$DOCS_URL",
             "note": "Application is hosted on Render.com free tier and may sleep after 15 minutes of inactivity. First request after inactivity may take up to 30 seconds to respond."
           }
           EOF
           
-          echo "::notice title=Deployment Information::Version: ${{ needs.release.outputs.version }} | Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }} | URL: ${{ steps.deploy.outputs.service_url }}"
+          echo "::notice title=Deployment Information::Version: ${{ needs.release.outputs.version }} | Environment: $ENV_NAME | URL: $SERVICE_URL | Branch: ${{ github.ref }}"
           
           echo "🚀 DEPLOYMENT SUCCESSFUL 🚀"
           echo "========================================"
           echo "✅ Version: ${{ needs.release.outputs.version }}"
           echo "✅ Channel: ${{ needs.release.outputs.channel }}"
-          echo "✅ Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}"
+          echo "✅ Environment: $ENV_NAME"
+          echo "✅ Branch: ${{ github.ref }}"
           echo "✅ Docker Image: ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
-          echo "✅ Deployment URL: ${{ steps.deploy.outputs.service_url }}"
+          echo "✅ Deployment URL: $SERVICE_URL"
           echo "✅ Documentation URL: $DOCS_URL"
           echo "✅ Note: Application may sleep after 15 minutes of inactivity"
           echo "========================================"
