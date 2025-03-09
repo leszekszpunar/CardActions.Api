@@ -7,7 +7,6 @@ services:
     plan: free
     branch: main
     healthCheckPath: /ping
-    startCommand: dotnet CardActions.Api.dll
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -26,9 +25,5 @@ services:
       - key: ASPNETCORE_HEALTH_PATH
         value: "/health"
     autoDeploy: true
-    scaling:
-      minInstances: 1
-      maxInstances: 1
-      targetMemoryPercent: 80
     domains:
       - cardactions-api.onrender.com 
