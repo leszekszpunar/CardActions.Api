@@ -91,6 +91,12 @@
       }
     ],
     [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "echo \"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\n<Project>\n    <PropertyGroup>\n        <Version>${nextRelease.version}</Version>\n    </PropertyGroup>\n</Project>\" > version.props"
+      }
+    ],
+    [
       "@semantic-release/git",
       {
         "assets": [

@@ -1,10 +1,10 @@
 # Właściciel repozytorium
-* @${{ github.repository_owner }}
+* @leszekszpunar
 
 # Szczególnie chronione pliki
-/.github/ @${{ github.repository_owner }}
-/.github/workflows/ @${{ github.repository_owner }}
-/src/ @${{ github.repository_owner }}
+/.github/ @leszekszpunar
+/.github/workflows/ @leszekszpunar
+/src/ @leszekszpunar
 
 # Uwaga: Gdy pracujesz sam, NIE włączaj opcji "Require review from Code Owners"
 # w ustawieniach branch protection, ponieważ zablokujesz sam siebie! 
