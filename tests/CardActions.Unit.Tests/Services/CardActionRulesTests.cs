@@ -3,6 +3,9 @@ using CardActions.Domain.Policies;
 using CardActions.Domain.Policies.Interfaces;
 using CardActions.Domain.Services;
 using CardActions.Domain.Services.Interfaces;
+using CardActions.Infrastructure.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit.Abstractions;
 
 namespace CardActions.Unit.Tests.Services;
@@ -16,54 +19,68 @@ public class CardActionRulesTests
     private readonly ICardActionPolicy _policy;
     private readonly ICardActionService _service;
     private readonly ITestOutputHelper _testOutputHelper;
+    private readonly IReadOnlyCollection<CardActionRule> _rules;
 
     public CardActionRulesTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        // Przygotowanie reguł testowych dla wszystkich akcji
-        var rules = PrepareTestRules();
-        _policy = new CardActionPolicy(rules);
+        
+        // Wczytanie reguł z pliku CSV
+        var csvPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+            "../../../../../src/CardActions.Api/Resources/Allowed_Actions_Table.csv"));
+        
+        var logger = new Mock<ILogger<CsvCardActionRulesLoader>>().Object;
+        var loader = new CsvCardActionRulesLoader(csvPath, logger);
+        _rules = loader.LoadRules();
+        
+        _policy = new CardActionPolicy(_rules);
 
-        var allActionNames = new List<string>
-        {
-            "ACTION1", "ACTION2", "ACTION3", "ACTION4", "ACTION5",
-            "ACTION6", "ACTION7", "ACTION8", "ACTION9", "ACTION10",
-            "ACTION11", "ACTION12", "ACTION13"
-        };
+        var allActionNames = _rules
+            .Select(r => r.ActionName)
+            .Distinct()
+            .ToList();
 
         _service = new CardActionService(_policy, allActionNames);
     }
 
     [Theory]
-    [InlineData("ACTION1", CardType.Prepaid, CardStatus.Active, true, true)]
-    [InlineData("ACTION1", CardType.Debit, CardStatus.Active, true, true)]
-    [InlineData("ACTION1", CardType.Credit, CardStatus.Active, true, true)]
-    [InlineData("ACTION1", CardType.Prepaid, CardStatus.Inactive, true, false)]
-    [InlineData("ACTION1", CardType.Prepaid, CardStatus.Blocked, true, false)]
+    [InlineData("ACTION1", CardType.Prepaid, CardStatus.Active, true)]
+    [InlineData("ACTION1", CardType.Debit, CardStatus.Active, true)]
+    [InlineData("ACTION1", CardType.Credit, CardStatus.Active, true)]
+    [InlineData("ACTION1", CardType.Prepaid, CardStatus.Inactive, false)]
+    [InlineData("ACTION1", CardType.Prepaid, CardStatus.Blocked, false)]
     public void Action1_ShouldBeAllowedOnlyForActiveCards(
-        string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet, bool expectedResult)
+        string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet)
     {
+        // Arrange
+        var expectedResult = IsActionAllowedInCsv(actionName, cardType, cardStatus, isPinSet);
+        
         // Act
         var result = _policy.IsActionAllowed(actionName, cardType, cardStatus, isPinSet);
 
         // Assert
-        result.ShouldBe(expectedResult);
+        result.ShouldBe(expectedResult, 
+            $"Akcja {actionName} dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet} powinna być {(expectedResult ? "dozwolona" : "niedozwolona")}");
     }
 
     [Theory]
-    [InlineData("ACTION2", CardType.Prepaid, CardStatus.Active, true, true)]
-    [InlineData("ACTION2", CardType.Debit, CardStatus.Active, true, true)]
-    [InlineData("ACTION2", CardType.Credit, CardStatus.Active, true, true)]
-    [InlineData("ACTION2", CardType.Prepaid, CardStatus.Inactive, true, true)]
-    [InlineData("ACTION2", CardType.Prepaid, CardStatus.Blocked, true, false)]
+    [InlineData("ACTION2", CardType.Prepaid, CardStatus.Active, true)]
+    [InlineData("ACTION2", CardType.Debit, CardStatus.Active, true)]
+    [InlineData("ACTION2", CardType.Credit, CardStatus.Active, true)]
+    [InlineData("ACTION2", CardType.Prepaid, CardStatus.Inactive, true)]
+    [InlineData("ACTION2", CardType.Prepaid, CardStatus.Blocked, false)]
     public void Action2_ShouldBeAllowedForActiveAndInactiveCards(
-        string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet, bool expectedResult)
+        string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet)
     {
+        // Arrange
+        var expectedResult = IsActionAllowedInCsv(actionName, cardType, cardStatus, isPinSet);
+        
         // Act
         var result = _policy.IsActionAllowed(actionName, cardType, cardStatus, isPinSet);
 
         // Assert
-        result.ShouldBe(expectedResult);
+        result.ShouldBe(expectedResult,
+            $"Akcja {actionName} dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet} powinna być {(expectedResult ? "dozwolona" : "niedozwolona")}");
     }
 
     [Theory]
@@ -123,35 +140,43 @@ public class CardActionRulesTests
     }
 
     [Theory]
-    [InlineData("ACTION6", CardType.Prepaid, CardStatus.Ordered, true, true)]
-    [InlineData("ACTION6", CardType.Prepaid, CardStatus.Ordered, false, false)]
-    [InlineData("ACTION6", CardType.Prepaid, CardStatus.Active, true, true)]
-    [InlineData("ACTION6", CardType.Debit, CardStatus.Active, true, true)]
-    [InlineData("ACTION6", CardType.Credit, CardStatus.Active, true, true)]
+    [InlineData("ACTION6", CardType.Prepaid, CardStatus.Ordered, true)]
+    [InlineData("ACTION6", CardType.Prepaid, CardStatus.Ordered, false)]
+    [InlineData("ACTION6", CardType.Prepaid, CardStatus.Active, true)]
+    [InlineData("ACTION6", CardType.Debit, CardStatus.Active, true)]
+    [InlineData("ACTION6", CardType.Credit, CardStatus.Active, true)]
     public void Action6_ShouldBeAllowedOnlyWhenPinIsSet(
-        string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet, bool expectedResult)
+        string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet)
     {
+        // Arrange
+        var expectedResult = IsActionAllowedInCsv(actionName, cardType, cardStatus, isPinSet);
+        
         // Act
         var result = _policy.IsActionAllowed(actionName, cardType, cardStatus, isPinSet);
 
         // Assert
-        result.ShouldBe(expectedResult);
+        result.ShouldBe(expectedResult,
+            $"Akcja {actionName} dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet} powinna być {(expectedResult ? "dozwolona" : "niedozwolona")}");
     }
 
     [Theory]
-    [InlineData("ACTION7", CardType.Prepaid, CardStatus.Ordered, false, true)]
-    [InlineData("ACTION7", CardType.Prepaid, CardStatus.Ordered, true, false)]
-    [InlineData("ACTION7", CardType.Prepaid, CardStatus.Active, true, true)]
-    [InlineData("ACTION7", CardType.Debit, CardStatus.Active, true, true)]
-    [InlineData("ACTION7", CardType.Credit, CardStatus.Active, true, true)]
+    [InlineData("ACTION7", CardType.Prepaid, CardStatus.Ordered, false)]
+    [InlineData("ACTION7", CardType.Prepaid, CardStatus.Ordered, true)]
+    [InlineData("ACTION7", CardType.Prepaid, CardStatus.Active, true)]
+    [InlineData("ACTION7", CardType.Debit, CardStatus.Active, true)]
+    [InlineData("ACTION7", CardType.Credit, CardStatus.Active, true)]
     public void Action7_ShouldBeAllowedOnlyWhenPinIsNotSetForOrderedCards(
-        string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet, bool expectedResult)
+        string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet)
     {
+        // Arrange
+        var expectedResult = IsActionAllowedInCsv(actionName, cardType, cardStatus, isPinSet);
+        
         // Act
         var result = _policy.IsActionAllowed(actionName, cardType, cardStatus, isPinSet);
 
         // Assert
-        result.ShouldBe(expectedResult);
+        result.ShouldBe(expectedResult,
+            $"Akcja {actionName} dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet} powinna być {(expectedResult ? "dozwolona" : "niedozwolona")}");
     }
 
     [Theory]
@@ -278,55 +303,89 @@ public class CardActionRulesTests
     public void GetAllowedActions_ShouldReturnCorrectActionsForActiveDebitCard()
     {
         // Arrange
-        var expectedActions = new[]
-        {
-            "ACTION1", "ACTION2", "ACTION3", "ACTION4", "ACTION6", "ACTION7",
-            "ACTION8", "ACTION9", "ACTION10", "ACTION11", "ACTION12", "ACTION13"
-        };
+        var cardType = CardType.Debit;
+        var cardStatus = CardStatus.Active;
+        var isPinSet = true;
+        
+        var expectedActions = _rules
+            .Where(r => r.CardType == cardType && 
+                        r.CardStatus == cardStatus && 
+                        r.IsAllowed && 
+                        (!r.RequiresPinSet.HasValue || r.RequiresPinSet.Value == isPinSet))
+            .Select(r => r.ActionName)
+            .Distinct()
+            .ToList();
 
         // Act
-        var result = _service.GetAllowedActions(CardType.Debit, CardStatus.Active, true);
+        var result = _service.GetAllowedActions(cardType, cardStatus, isPinSet);
 
         // Assert
-        result.Count.ShouldBe(expectedActions.Length);
+        result.Count.ShouldBe(expectedActions.Count);
         var resultNames = result.Select(a => a.Name).ToList();
         foreach (var expectedAction in expectedActions) resultNames.ShouldContain(expectedAction);
+        
+        // Wyświetlenie wszystkich dozwolonych akcji dla lepszej przejrzystości
+        _testOutputHelper.WriteLine($"Dozwolone akcje dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet}:");
+        foreach (var action in result) _testOutputHelper.WriteLine($"- {action.Name}");
     }
 
     [Fact]
     public void GetAllowedActions_ShouldReturnCorrectActionsForBlockedCreditCard()
     {
         // Arrange
-        var expectedActions = new[]
-        {
-            "ACTION3", "ACTION4", "ACTION5", "ACTION6", "ACTION7", "ACTION8", "ACTION9"
-        };
+        var cardType = CardType.Credit;
+        var cardStatus = CardStatus.Blocked;
+        var isPinSet = true;
+        
+        var expectedActions = _rules
+            .Where(r => r.CardType == cardType && 
+                        r.CardStatus == cardStatus && 
+                        r.IsAllowed && 
+                        (!r.RequiresPinSet.HasValue || r.RequiresPinSet.Value == isPinSet))
+            .Select(r => r.ActionName)
+            .Distinct()
+            .ToList();
 
         // Act
-        var result = _service.GetAllowedActions(CardType.Credit, CardStatus.Blocked, true);
+        var result = _service.GetAllowedActions(cardType, cardStatus, isPinSet);
 
         // Assert
-        result.Count.ShouldBe(expectedActions.Length);
+        result.Count.ShouldBe(expectedActions.Count);
         var resultNames = result.Select(a => a.Name).ToList();
         foreach (var expectedAction in expectedActions) resultNames.ShouldContain(expectedAction);
+        
+        // Wyświetlenie wszystkich dozwolonych akcji dla lepszej przejrzystości
+        _testOutputHelper.WriteLine($"Dozwolone akcje dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet}:");
+        foreach (var action in result) _testOutputHelper.WriteLine($"- {action.Name}");
     }
 
     [Fact]
     public void GetAllowedActions_ShouldReturnCorrectActionsForClosedPrepaidCard()
     {
         // Arrange
-        var expectedActions = new[] { "ACTION3", "ACTION4", "ACTION9" };
+        var cardType = CardType.Prepaid;
+        var cardStatus = CardStatus.Closed;
+        var isPinSet = true;
+        
+        var expectedActions = _rules
+            .Where(r => r.CardType == cardType && 
+                        r.CardStatus == cardStatus && 
+                        r.IsAllowed && 
+                        (!r.RequiresPinSet.HasValue || r.RequiresPinSet.Value == isPinSet))
+            .Select(r => r.ActionName)
+            .Distinct()
+            .ToList();
 
         // Act
-        var result = _service.GetAllowedActions(CardType.Prepaid, CardStatus.Closed, true);
+        var result = _service.GetAllowedActions(cardType, cardStatus, isPinSet);
 
         // Assert
-        result.Count.ShouldBe(expectedActions.Length);
+        result.Count.ShouldBe(expectedActions.Count);
         var resultNames = result.Select(a => a.Name).ToList();
         foreach (var expectedAction in expectedActions) resultNames.ShouldContain(expectedAction);
-
+        
         // Wyświetlenie wszystkich dozwolonych akcji dla lepszej przejrzystości
-        _testOutputHelper.WriteLine("Dozwolone akcje dla karty prepaid w statusie Closed z ustawionym PIN:");
+        _testOutputHelper.WriteLine($"Dozwolone akcje dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet}:");
         foreach (var action in result) _testOutputHelper.WriteLine($"- {action.Name}");
     }
 
@@ -414,150 +473,29 @@ public class CardActionRulesTests
     }
 
     /// <summary>
-    ///     Przygotowuje zestaw testowych reguł dla wszystkich akcji.
+    /// Sprawdza, czy akcja jest dozwolona na podstawie reguł wczytanych z pliku CSV.
     /// </summary>
-    private IReadOnlyCollection<CardActionRule> PrepareTestRules()
+    private bool IsActionAllowedInCsv(string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet)
     {
-        var rules = new List<CardActionRule>();
-
-        // ACTION1 - tylko dla aktywnych kart
-        foreach (var cardType in Enum.GetValues<CardType>())
-            rules.Add(new CardActionRule("ACTION1", cardType, CardStatus.Active, true));
-
-        // ACTION2 - dla aktywnych i nieaktywnych kart
-        foreach (var cardType in Enum.GetValues<CardType>())
-        {
-            rules.Add(new CardActionRule("ACTION2", cardType, CardStatus.Active, true));
-            rules.Add(new CardActionRule("ACTION2", cardType, CardStatus.Inactive, true));
-        }
-
-        // ACTION3 - dla wszystkich typów kart i statusów
-        foreach (var cardType in Enum.GetValues<CardType>())
-        foreach (var cardStatus in Enum.GetValues<CardStatus>())
-            rules.Add(new CardActionRule("ACTION3", cardType, cardStatus, true));
-
-        // ACTION4 - dla wszystkich typów kart i statusów
-        foreach (var cardType in Enum.GetValues<CardType>())
-        foreach (var cardStatus in Enum.GetValues<CardStatus>())
-            rules.Add(new CardActionRule("ACTION4", cardType, cardStatus, true));
-
-        // ACTION5 - tylko dla kart kredytowych
-        foreach (var cardStatus in Enum.GetValues<CardStatus>())
-            rules.Add(new CardActionRule("ACTION5", CardType.Credit, cardStatus, true));
-
-        // ACTION6 - zależne od PIN
-        foreach (var cardType in Enum.GetValues<CardType>())
-        {
-            // Dla statusów Ordered i Inactive - tylko gdy PIN jest ustawiony
-            rules.Add(new CardActionRule("ACTION6", cardType, CardStatus.Ordered, true, true));
-            rules.Add(new CardActionRule("ACTION6", cardType, CardStatus.Inactive, true, true));
-
-            // Dla statusu Active - zawsze dozwolone
-            rules.Add(new CardActionRule("ACTION6", cardType, CardStatus.Active, true));
-
-            // Dla statusu Blocked - tylko gdy PIN jest ustawiony
-            rules.Add(new CardActionRule("ACTION6", cardType, CardStatus.Blocked, true, true));
-
-            // Dla pozostałych statusów - niedozwolone
-            rules.Add(new CardActionRule("ACTION6", cardType, CardStatus.Restricted, false));
-            rules.Add(new CardActionRule("ACTION6", cardType, CardStatus.Expired, false));
-            rules.Add(new CardActionRule("ACTION6", cardType, CardStatus.Closed, false));
-        }
-
-        // ACTION7 - zależne od PIN
-        foreach (var cardType in Enum.GetValues<CardType>())
-        {
-            // Dla statusów Ordered i Inactive - tylko gdy PIN NIE jest ustawiony
-            rules.Add(new CardActionRule("ACTION7", cardType, CardStatus.Ordered, true, false));
-            rules.Add(new CardActionRule("ACTION7", cardType, CardStatus.Inactive, true, false));
-
-            // Dla statusu Active - zawsze dozwolone
-            rules.Add(new CardActionRule("ACTION7", cardType, CardStatus.Active, true));
-
-            // Dla statusu Blocked - tylko gdy PIN jest ustawiony
-            rules.Add(new CardActionRule("ACTION7", cardType, CardStatus.Blocked, true, true));
-
-            // Dla pozostałych statusów - niedozwolone
-            rules.Add(new CardActionRule("ACTION7", cardType, CardStatus.Restricted, false));
-            rules.Add(new CardActionRule("ACTION7", cardType, CardStatus.Expired, false));
-            rules.Add(new CardActionRule("ACTION7", cardType, CardStatus.Closed, false));
-        }
-
-        // ACTION8 - dla Ordered, Inactive, Active i Blocked
-        foreach (var cardType in Enum.GetValues<CardType>())
-        {
-            rules.Add(new CardActionRule("ACTION8", cardType, CardStatus.Ordered, true));
-            rules.Add(new CardActionRule("ACTION8", cardType, CardStatus.Inactive, true));
-            rules.Add(new CardActionRule("ACTION8", cardType, CardStatus.Active, true));
-            rules.Add(new CardActionRule("ACTION8", cardType, CardStatus.Blocked, true));
-
-            // Dla pozostałych statusów - niedozwolone
-            rules.Add(new CardActionRule("ACTION8", cardType, CardStatus.Restricted, false));
-            rules.Add(new CardActionRule("ACTION8", cardType, CardStatus.Expired, false));
-            rules.Add(new CardActionRule("ACTION8", cardType, CardStatus.Closed, false));
-        }
-
-        // ACTION9 - dla wszystkich typów kart i statusów
-        foreach (var cardType in Enum.GetValues<CardType>())
-        foreach (var cardStatus in Enum.GetValues<CardStatus>())
-            rules.Add(new CardActionRule("ACTION9", cardType, cardStatus, true));
-
-        // ACTION10 - dla Ordered, Inactive, Active
-        foreach (var cardType in Enum.GetValues<CardType>())
-        {
-            rules.Add(new CardActionRule("ACTION10", cardType, CardStatus.Ordered, true));
-            rules.Add(new CardActionRule("ACTION10", cardType, CardStatus.Inactive, true));
-            rules.Add(new CardActionRule("ACTION10", cardType, CardStatus.Active, true));
-
-            // Dla pozostałych statusów - niedozwolone
-            rules.Add(new CardActionRule("ACTION10", cardType, CardStatus.Restricted, false));
-            rules.Add(new CardActionRule("ACTION10", cardType, CardStatus.Blocked, false));
-            rules.Add(new CardActionRule("ACTION10", cardType, CardStatus.Expired, false));
-            rules.Add(new CardActionRule("ACTION10", cardType, CardStatus.Closed, false));
-        }
-
-        // ACTION11 - dla Inactive, Active
-        foreach (var cardType in Enum.GetValues<CardType>())
-        {
-            rules.Add(new CardActionRule("ACTION11", cardType, CardStatus.Inactive, true));
-            rules.Add(new CardActionRule("ACTION11", cardType, CardStatus.Active, true));
-
-            // Dla pozostałych statusów - niedozwolone
-            rules.Add(new CardActionRule("ACTION11", cardType, CardStatus.Ordered, false));
-            rules.Add(new CardActionRule("ACTION11", cardType, CardStatus.Restricted, false));
-            rules.Add(new CardActionRule("ACTION11", cardType, CardStatus.Blocked, false));
-            rules.Add(new CardActionRule("ACTION11", cardType, CardStatus.Expired, false));
-            rules.Add(new CardActionRule("ACTION11", cardType, CardStatus.Closed, false));
-        }
-
-        // ACTION12 - dla Ordered, Inactive, Active
-        foreach (var cardType in Enum.GetValues<CardType>())
-        {
-            rules.Add(new CardActionRule("ACTION12", cardType, CardStatus.Ordered, true));
-            rules.Add(new CardActionRule("ACTION12", cardType, CardStatus.Inactive, true));
-            rules.Add(new CardActionRule("ACTION12", cardType, CardStatus.Active, true));
-
-            // Dla pozostałych statusów - niedozwolone
-            rules.Add(new CardActionRule("ACTION12", cardType, CardStatus.Restricted, false));
-            rules.Add(new CardActionRule("ACTION12", cardType, CardStatus.Blocked, false));
-            rules.Add(new CardActionRule("ACTION12", cardType, CardStatus.Expired, false));
-            rules.Add(new CardActionRule("ACTION12", cardType, CardStatus.Closed, false));
-        }
-
-        // ACTION13 - dla Ordered, Inactive, Active
-        foreach (var cardType in Enum.GetValues<CardType>())
-        {
-            rules.Add(new CardActionRule("ACTION13", cardType, CardStatus.Ordered, true));
-            rules.Add(new CardActionRule("ACTION13", cardType, CardStatus.Inactive, true));
-            rules.Add(new CardActionRule("ACTION13", cardType, CardStatus.Active, true));
-
-            // Dla pozostałych statusów - niedozwolone
-            rules.Add(new CardActionRule("ACTION13", cardType, CardStatus.Restricted, false));
-            rules.Add(new CardActionRule("ACTION13", cardType, CardStatus.Blocked, false));
-            rules.Add(new CardActionRule("ACTION13", cardType, CardStatus.Expired, false));
-            rules.Add(new CardActionRule("ACTION13", cardType, CardStatus.Closed, false));
-        }
-
-        return rules;
+        var matchingRules = _rules
+            .Where(r => r.ActionName.Equals(actionName, StringComparison.OrdinalIgnoreCase) &&
+                        r.CardType == cardType &&
+                        r.CardStatus == cardStatus)
+            .ToList();
+            
+        if (!matchingRules.Any())
+            return false;
+            
+        var pinMatchingRules = matchingRules
+            .Where(r => !r.RequiresPinSet.HasValue || r.RequiresPinSet.Value == isPinSet)
+            .ToList();
+            
+        if (!pinMatchingRules.Any())
+            return false;
+            
+        if (pinMatchingRules.Any(r => !r.IsAllowed))
+            return false;
+            
+        return true;
     }
 }
