@@ -17,6 +17,27 @@ namespace CardActions.Infrastructure.Services;
 /// Implementacja dostawcy reguł akcji karty, która wczytuje reguły z pliku CSV.
 /// Klasa ta odpowiada za wczytywanie i parsowanie reguł z pliku CSV oraz dostarczanie
 /// ich do warstwy domenowej.
+/// 
+/// Wzorce projektowe:
+/// - Repository Pattern: Ta klasa działa jako repozytorium reguł akcji karty, 
+///   oddzielając logikę dostępu do danych (z pliku CSV) od logiki biznesowej.
+/// - Factory Pattern: Metoda LoadRulesFromCsv działa jako fabryka obiektów CardActionRule,
+///   tworząc je na podstawie danych z pliku CSV.
+/// - Adapter Pattern: Klasa adaptuje dane z pliku CSV do obiektów domenowych CardActionRule.
+/// - Dependency Injection: Logger jest wstrzykiwany przez konstruktor, co ułatwia testowanie.
+/// 
+/// Zalety:
+/// - Odseparowanie dostępu do danych od logiki biznesowej
+/// - Elastyczność źródła danych (można łatwo zmienić na inny format pliku lub bazę danych)
+/// - Centralne miejsce do wczytywania i zarządzania regułami
+/// - Obsługa błędów i logowanie
+/// 
+/// Zasady SOLID:
+/// - Single Responsibility: Klasa ma jedno zadanie - dostarczanie reguł
+/// - Open/Closed: Można rozszerzyć funkcjonalność bez modyfikacji istniejącego kodu
+/// - Liskov Substitution: Implementuje interfejs ICardActionRulesProvider
+/// - Interface Segregation: Interfejs ICardActionRulesProvider jest mały i spójny
+/// - Dependency Inversion: Zależność od logowania jest wstrzykiwana
 /// </summary>
 internal sealed class CardActionRulesProvider : ICardActionRulesProvider
 {

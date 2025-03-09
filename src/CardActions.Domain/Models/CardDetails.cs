@@ -3,8 +3,20 @@ using System;
 namespace CardActions.Domain.Models;
 
 /// <summary>
-/// Reprezentuje szczegóły karty płatniczej jako encję domenową.
-/// Klasa ta zawiera podstawowe informacje o karcie, takie jak numer, typ, status i informację o PIN-ie.
+/// Reprezentuje szczegóły karty płatniczej jako encję domenową, zawierającą podstawowe
+/// informacje o karcie, takie jak numer, typ, status oraz informację o PIN.
+/// 
+/// Wzorce projektowe:
+/// - Entity Pattern: Ta klasa reprezentuje encję biznesową z tożsamością określoną przez CardNumber.
+///   Encje, w przeciwieństwie do obiektów wartościowych, mają swoją tożsamość niezależną od wartości.
+/// - Encapsulation: Właściwości mają publiczne gettery, ale prywatne settery, co zapewnia
+///   kontrolowaną modyfikację stanu encji.
+/// - Validation: Konstruktor zawiera logikę walidacji, zapewniając integralność danych.
+/// 
+/// Zalety:
+/// - Jasna reprezentacja encji biznesowej w modelu domenowym
+/// - Kontrolowana modyfikacja stanu
+/// - Centralizacja logiki walidacji w konstruktorze
 /// </summary>
 public class CardDetails
 {

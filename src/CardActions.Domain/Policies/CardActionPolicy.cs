@@ -10,6 +10,20 @@ namespace CardActions.Domain.Policies;
 /// Implementacja polityki określającej, które akcje są dozwolone dla danej karty.
 /// Klasa ta implementuje wzorzec Policy z DDD i odpowiada za egzekwowanie reguł biznesowych
 /// dotyczących dozwolonych akcji dla kart o określonych parametrach.
+/// 
+/// Wzorce projektowe:
+/// - Policy Pattern: Ta klasa jest przykładem wzorca Policy, gdzie reguły biznesowe są
+///   enkapsulowane w osobnej klasie. Dzięki temu reguły można łatwo modyfikować i testować
+///   niezależnie od reszty kodu.
+/// - Strategy Pattern: Polityka działa jako strategia określania dozwolonych akcji,
+///   pozwalając na łatwą podmianę w przyszłości (np. inna implementacja ICardActionPolicy).
+/// - Dependency Injection: Zależność od reguł jest wstrzykiwana przez konstruktor,
+///   co ułatwia testowanie i zwiększa elastyczność.
+/// 
+/// Zalety:
+/// - Odseparowanie reguł biznesowych od innych warstw aplikacji
+/// - Jednolite miejsce do definiowania i egzekwowania polityk
+/// - Możliwość łatwej zmiany polityki w przyszłości
 /// </summary>
 public class CardActionPolicy : ICardActionPolicy
 {
@@ -74,6 +88,17 @@ public class CardActionPolicy : ICardActionPolicy
 /// <summary>
 /// Reprezentuje regułę określającą, czy dana akcja jest dozwolona dla określonego typu i statusu karty.
 /// Implementuje wzorzec Value Object z DDD.
+/// 
+/// Wzorce projektowe:
+/// - Value Object: Ta klasa jest niemodyfikowalna po utworzeniu, a jej tożsamość jest określona
+///   przez wartości jej właściwości, a nie przez identyfikator.
+/// - Immutability: Wszystkie właściwości są tylko do odczytu, co zapobiega niepożądanym modyfikacjom
+///   i zwiększa bezpieczeństwo w środowisku wielowątkowym.
+/// 
+/// Zalety:
+/// - Enkapsulacja reguły jako samodzielnego obiektu biznesowego
+/// - Możliwość łatwego testowania każdej reguły osobno
+/// - Niemutowalność zapobiega przypadkowym zmianom stanu
 /// </summary>
 public class CardActionRule
 {

@@ -12,6 +12,30 @@ using Microsoft.AspNetCore.Http;
 
 namespace CardActions.Infrastructure;
 
+/// <summary>
+/// Klasa rozszerzająca konfigurację dla warstwy infrastruktury.
+/// 
+/// Architektura projektu opiera się na zasadach Domain-Driven Design (DDD) z wyraźnym podziałem na warstwy:
+/// - Domain - zawiera modele domenowe, polityki i podstawowe reguły biznesowe
+/// - Application - zawiera przypadki użycia i logikę aplikacji
+/// - Infrastructure - zawiera implementacje techniczne interfejsów zdefiniowanych w wyższych warstwach
+/// - API - warstwa prezentacji (kontrolery)
+///
+/// Projekt wykorzystuje następujące wzorce projektowe:
+/// - Dependency Injection (DI) - wstrzykiwanie zależności przez konstruktor
+/// - Repository Pattern - oddzielenie logiki dostępu do danych od logiki biznesowej
+/// - Strategy Pattern - różne strategie określania dozwolonych akcji
+/// - Policy Pattern - enkapsulacja reguł biznesowych w osobnych klasach
+/// - Value Object - niemutowalne obiekty wartościowe
+/// - Factory Method - fabryki do tworzenia obiektów
+///
+/// Jakość kodu zapewniają:
+/// - Zasady SOLID
+/// - Obsługa błędów i walidacja danych wejściowych
+/// - Niemutowalność obiektów (immutability)
+/// - Interfejsy dla kluczowych komponentów
+/// - System regułowy oparty na konfiguracji
+/// </summary>
 public static class DependencyInjection
 {
     /// <summary>
@@ -33,26 +57,14 @@ public static class DependencyInjection
         // Rejestracja serwisów
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         
-        // Wybór dostawcy reguł akcji (CSV lub JSON)
-        var useJsonProvider = configuration.GetValue<bool>("UseJsonRulesProvider");
-        if (useJsonProvider)
+        // Rejestracja dostawcy reguł akcji (tylko CSV)
+        services.AddSingleton<ICardActionRulesProvider>(provider =>
         {
-            services.AddSingleton<ICardActionRulesProvider>(provider =>
-            {
-                var logger = provider.GetRequiredService<ILogger<JsonCardActionRulesProvider>>();
-                var jsonPath = Path.Combine(AppContext.BaseDirectory, "Resources", "card_actions_rules.json");
-                return new JsonCardActionRulesProvider(jsonPath, logger);
-            });
-        }
-        else
-        {
-            services.AddSingleton<ICardActionRulesProvider>(provider =>
-            {
-                var logger = provider.GetRequiredService<ILogger<CardActionRulesProvider>>();
-                var csvPath = Path.Combine(AppContext.BaseDirectory, "Resources", "card_actions_rules.csv");
-                return new CardActionRulesProvider(csvPath, logger);
-            });
-        }
+            var logger = provider.GetRequiredService<ILogger<CardActionRulesProvider>>();
+            var csvPath = configuration["CardActionRulesPath"] ?? 
+                Path.Combine(AppContext.BaseDirectory, "Resources", "Allowed_Actions_Table.csv");
+            return new CardActionRulesProvider(csvPath, logger);
+        });
             
         services.AddScoped<ICardService, CardService>();
 

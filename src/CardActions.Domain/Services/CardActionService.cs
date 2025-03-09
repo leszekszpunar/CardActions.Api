@@ -2,13 +2,32 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CardActions.Domain.Models;
+using CardActions.Domain.Policies;
 
 namespace CardActions.Domain.Services;
 
 /// <summary>
-/// Implementacja serwisu domenowego do zarządzania akcjami karty.
-/// Klasa ta implementuje wzorzec Domain Service z DDD i odpowiada za dostarczanie
-/// funkcjonalności związanych z akcjami karty, które nie pasują do żadnej konkretnej encji.
+/// Serwis domenowy dostarczający funkcjonalności związane z akcjami karty.
+/// Klasa ta odpowiada za pobieranie dozwolonych akcji dla karty o określonych parametrach.
+/// 
+/// Wzorce projektowe:
+/// - Service Layer: Ta klasa implementuje wzorzec Service Layer, działając jako
+///   fasada dla operacji domenowych związanych z akcjami karty.
+/// - Strategy Pattern: Serwis korzysta z polityki jako strategii do określania,
+///   które akcje są dozwolone, co umożliwia łatwą zmianę zachowania.
+/// - Dependency Injection: Zależności od polityki i listy wszystkich akcji są wstrzykiwane
+///   przez konstruktor, co zwiększa elastyczność i ułatwia testowanie.
+/// 
+/// SOLID:
+/// - Single Responsibility Principle: Klasa ma jedno zadanie - dostarczanie akcji karty
+/// - Open/Closed Principle: Można rozszerzyć zachowanie serwisu bez modyfikacji jego kodu
+///   poprzez dostarczenie innej implementacji ICardActionPolicy
+/// - Dependency Inversion: Serwis zależy od abstrakcji (interfejsów), a nie od konkretnych implementacji
+/// 
+/// Zalety:
+/// - Prosty interfejs dla klientów
+/// - Możliwość wymiany polityki bez zmiany serwisu
+/// - Łatwość testowania dzięki wstrzykiwaniu zależności
 /// </summary>
 public class CardActionService : ICardActionService
 {

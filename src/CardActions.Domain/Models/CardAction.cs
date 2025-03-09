@@ -3,8 +3,21 @@ using System;
 namespace CardActions.Domain.Models;
 
 /// <summary>
-/// Reprezentuje akcję, którą można wykonać na karcie płatniczej jako obiekt wartości (Value Object).
-/// Implementuje wzorzec Value Object z DDD.
+/// Reprezentuje akcję, która może być wykonana na karcie płatniczej.
+/// Klasa ta implementuje wzorzec Value Object z DDD.
+/// 
+/// Wzorce projektowe:
+/// - Value Object: Obiekt wartościowy, którego tożsamość określona jest przez jego wartość (Name),
+///   a nie przez identyfikator. Dwa obiekty CardAction z tym samym Name są równe.
+/// - Immutability: Klasa jest niemutowalna (ma tylko gettery, brak setterów), co zwiększa
+///   bezpieczeństwo i przewidywalność w aplikacji.
+/// - Factory Method: Metoda statyczna Create służy jako fabryka obiektów CardAction,
+///   enkapsulując logikę tworzenia i walidacji.
+/// 
+/// Zalety:
+/// - Niemutowalność zapobiega przypadkowym zmianom stanu
+/// - Implementacja Equals i GetHashCode umożliwia poprawne porównywanie i używanie w kolekcjach
+/// - Enkapsulacja logiki walidacji w metodzie fabrycznej
 /// </summary>
 public class CardAction
 {
