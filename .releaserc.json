@@ -43,22 +43,15 @@
     [
       "@semantic-release/changelog",
       {
-        "changelogFile": "CHANGELOG${(process.env.GITHUB_REF_NAME && process.env.GITHUB_REF_NAME !== 'main') ? '-develop' : ''}.md",
-        "changelogTitle": "# Changelog ${(process.env.GITHUB_REF_NAME && process.env.GITHUB_REF_NAME !== 'main') ? 'Development' : ''}"
-      }
-    ],
-    [
-      "@semantic-release/exec",
-      {
-        "prepareCmd": "echo ${nextRelease.version} > VERSION"
+        "changelogFile": "${process.env.GITHUB_REF_NAME === 'main' ? 'CHANGELOG.md' : 'CHANGELOG-develop.md'}",
+        "changelogTitle": "# Changelog ${process.env.GITHUB_REF_NAME === 'main' ? '' : 'Development'}"
       }
     ],
     [
       "@semantic-release/git",
       {
         "assets": [
-          "CHANGELOG${(process.env.GITHUB_REF_NAME && process.env.GITHUB_REF_NAME !== 'main') ? '-develop' : ''}.md",
-          "VERSION"
+          "${process.env.GITHUB_REF_NAME === 'main' ? 'CHANGELOG.md' : 'CHANGELOG-develop.md'}"
         ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
