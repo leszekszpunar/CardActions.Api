@@ -5,8 +5,20 @@ namespace CardActions.Domain.Policies;
 
 /// <summary>
 ///     Implementacja polityki określającej, które akcje są dozwolone dla danej karty.
-///     Klasa ta implementuje wzorzec Policy z DDD i odpowiada za egzekwowanie reguł biznesowych
-///     dotyczących dozwolonych akcji dla kart o określonych parametrach.
+///     Proces biznesowy:
+///     1. Weryfikacja podstawowa
+///        - Sprawdza czy nazwa akcji nie jest pusta
+///        - Jeśli jest pusta, akcja jest niedozwolona
+///     2. Dopasowanie reguł
+///        - Znajduje reguły pasujące do typu i statusu karty
+///        - Jeśli nie ma pasujących reguł, akcja jest niedozwolona
+///     3. Sprawdzenie PIN-u
+///        - Weryfikuje czy wymagania dotyczące PIN-u są spełnione
+///        - Jeśli wymagania nie są spełnione, akcja jest niedozwolona
+///     4. Końcowa weryfikacja
+///        - Sprawdza czy wszystkie znalezione reguły zezwalają na akcję
+///        - Jeśli którakolwiek reguła zabrania, akcja jest niedozwolona
+///     
 ///     Wzorce projektowe:
 ///     - Policy Pattern: Ta klasa jest przykładem wzorca Policy, gdzie reguły biznesowe są
 ///     enkapsulowane w osobnej klasie. Dzięki temu reguły można łatwo modyfikować i testować
@@ -15,6 +27,7 @@ namespace CardActions.Domain.Policies;
 ///     pozwalając na łatwą podmianę w przyszłości (np. inna implementacja ICardActionPolicy).
 ///     - Dependency Injection: Zależność od reguł jest wstrzykiwana przez konstruktor,
 ///     co ułatwia testowanie i zwiększa elastyczność.
+///     
 ///     Zalety:
 ///     - Odseparowanie reguł biznesowych od innych warstw aplikacji
 ///     - Jednolite miejsce do definiowania i egzekwowania polityk
@@ -39,6 +52,11 @@ public class CardActionPolicy : ICardActionPolicy
 
     /// <summary>
     ///     Sprawdza, czy dana akcja jest dozwolona dla karty o określonych parametrach.
+    ///     Proces weryfikacji:
+    ///     1. Sprawdzenie poprawności nazwy akcji
+    ///     2. Znalezienie reguł pasujących do typu i statusu karty
+    ///     3. Weryfikacja wymagań dotyczących PIN-u
+    ///     4. Sprawdzenie czy wszystkie pasujące reguły zezwalają na akcję
     /// </summary>
     /// <param name="actionName">Nazwa akcji do sprawdzenia</param>
     /// <param name="cardType">Typ karty</param>
