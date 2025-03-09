@@ -237,6 +237,9 @@ jobs:
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
       url: ${{ steps.deploy.outputs.service_url }}
+    outputs:
+      environment_url: ${{ steps.deploy.outputs.service_url }}
+      environment_name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
     steps:
       - name: Deploy to Render
         id: deploy
@@ -289,16 +292,22 @@ jobs:
             "channel": "${{ needs.release.outputs.channel }}",
             "environment": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
             "dockerImage": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}",
+            "deploymentUrl": "${{ steps.deploy.outputs.service_url }}",
             "docsUrl": "$DOCS_URL"
           }
           EOF
           
-          echo "Configuration Summary:"
-          echo "Version: ${{ needs.release.outputs.version }}"
-          echo "Channel: ${{ needs.release.outputs.channel }}"
-          echo "Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}"
-          echo "Docker Image: ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
-          echo "Documentation URL: $DOCS_URL"
+          echo "::notice title=Deployment Information::Version: ${{ needs.release.outputs.version }} | Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }} | URL: ${{ steps.deploy.outputs.service_url }}"
+          
+          echo "🚀 DEPLOYMENT SUCCESSFUL 🚀"
+          echo "========================================"
+          echo "✅ Version: ${{ needs.release.outputs.version }}"
+          echo "✅ Channel: ${{ needs.release.outputs.channel }}"
+          echo "✅ Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}"
+          echo "✅ Docker Image: ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
+          echo "✅ Deployment URL: ${{ steps.deploy.outputs.service_url }}"
+          echo "✅ Documentation URL: $DOCS_URL"
+          echo "========================================"
 
       - name: Upload Deployment Config
         uses: actions/upload-artifact@v4
@@ -306,6 +315,31 @@ jobs:
           name: deployment-config-${{ needs.release.outputs.channel }}
           path: deployment.json
           retention-days: 30
+          
+      - name: Create Deployment Tag
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tagName = `deploy-${{ needs.release.outputs.version }}-${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}`;
+            const ref = `refs/tags/${tagName}`;
+            const sha = context.sha;
+            
+            try {
+              await github.rest.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: ref,
+                sha: sha
+              });
+              console.log(`Created tag: ${tagName}`);
+            } catch (error) {
+              if (error.status === 422) {
+                console.log(`Tag ${tagName} already exists.`);
+              } else {
+                throw error;
+              }
+            }
 
   # 6. Cleanup starych obrazów Docker
   cleanup:
@@ -340,3 +374,42 @@ jobs:
           package-type: 'container'
           min-versions-to-keep: 3
           delete-only-pre-release-versions: true
+          
+      - name: Delete old package with incorrect name format
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            try {
+              // List packages for the repository
+              const packages = await github.rest.packages.listPackagesForOrganization({
+                package_type: 'container',
+                org: owner
+              });
+              
+              // Find the package with the old name format
+              const oldPackage = packages.data.find(pkg => 
+                pkg.name === 'cardactions.api/cardactions-api' || 
+                pkg.name.includes('cardactions.api'));
+              
+              if (oldPackage) {
+                console.log(`Found old package: ${oldPackage.name}`);
+                
+                // Delete the package
+                await github.rest.packages.deletePackageForOrg({
+                  package_type: 'container',
+                  package_name: oldPackage.name,
+                  org: owner
+                });
+                
+                console.log(`Successfully deleted old package: ${oldPackage.name}`);
+              } else {
+                console.log('No old package with incorrect name format found.');
+              }
+            } catch (error) {
+              console.log(`Error: ${error.message}`);
+              // Don't fail the workflow if this step fails
+            }
