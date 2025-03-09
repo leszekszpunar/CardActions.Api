@@ -67,7 +67,6 @@ Projekt wykorzystuje:
 - GitHub Actions do CI/CD
 - Semantic versioning dla wersjonowania
 - Docker i GitHub Container Registry
-- Kubernetes do deploymentu
 
 ### Wersjonowanie
 
