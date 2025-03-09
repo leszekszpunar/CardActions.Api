@@ -5,12 +5,16 @@ API do zarządzania akcjami dla kart płatniczych, zbudowane z wykorzystaniem .N
 ## 🌐 Dostępność aplikacji
 
 ### Adresy aplikacji
+
 - **Produkcja**: [https://cardactions-api-latest.onrender.com](https://cardactions-api-latest.onrender.com)
 - **Development**: [https://cardactions-api-beta.onrender.com](https://cardactions-api-beta.onrender.com)
 
-> **Uwaga**: Aplikacja jest hostowana na darmowym planie Render.com, który usypia aplikację po 15 minutach nieaktywności. Jeśli aplikacja jest niedostępna, pierwsze żądanie może trwać do 30 sekund, ponieważ serwer musi się uruchomić. Kolejne żądania będą już szybkie.
+> **Uwaga**: Aplikacja jest hostowana na darmowym planie Render.com, który usypia aplikację po 15 minutach
+> nieaktywności. Jeśli aplikacja jest niedostępna, pierwsze żądanie może trwać do 30 sekund, ponieważ serwer musi się
+> uruchomić. Kolejne żądania będą już szybkie.
 
 ### Endpointy
+
 - Swagger UI: `/swagger`
 - Dokumentacja API: `/docs`
 - Health check: `/health`
