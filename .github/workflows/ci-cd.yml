@@ -167,11 +167,6 @@ jobs:
           name: api-artifact
           path: publish/
 
-      - name: Copy README.md to publish directory
-        run: |
-          cp README.md publish/
-          echo "README.md copied to publish directory"
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
