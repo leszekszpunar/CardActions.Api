@@ -10,7 +10,7 @@ public class CardActionRule
     public required CardStatus CardStatus { get; set; }
     public bool? RequiresPinSet { get; set; }
     public required bool IsAllowed { get; set; }
-    
+
     public int CardActionId { get; set; }
     public CardAction CardAction { get; set; } = null!;
-} 
+}

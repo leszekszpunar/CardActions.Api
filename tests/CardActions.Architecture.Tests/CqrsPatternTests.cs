@@ -1,7 +1,7 @@
-using NetArchTest.Rules;
-using Xunit;
-using Xunit.Abstractions;
 using CardActions.Architecture.Tests.Helpers;
+using MediatR;
+using NetArchTest.Rules;
+using Xunit.Abstractions;
 
 namespace CardActions.Architecture.Tests;
 
@@ -24,7 +24,7 @@ public class CqrsPatternTests
         var commands = Types
             .InAssembly(assembly)
             .That()
-            .ImplementInterface(typeof(MediatR.IRequest<>))
+            .ImplementInterface(typeof(IRequest<>))
             .And()
             .HaveNameEndingWith("Command")
             .GetTypes();
@@ -35,24 +35,16 @@ public class CqrsPatternTests
         {
             var interfaces = command.GetInterfaces();
             foreach (var @interface in interfaces)
-            {
-                if (@interface.IsGenericType && @interface.GetGenericTypeDefinition() == typeof(MediatR.IRequest<>))
+                if (@interface.IsGenericType && @interface.GetGenericTypeDefinition() == typeof(IRequest<>))
                 {
                     var returnType = @interface.GetGenericArguments()[0];
-                    if (returnType != typeof(MediatR.Unit))
-                    {
-                        commandsReturningValues.Add($"{command.Name} -> {returnType.Name}");
-                    }
+                    if (returnType != typeof(Unit)) commandsReturningValues.Add($"{command.Name} -> {returnType.Name}");
                 }
-            }
         }
 
         // Assert
         _output.WriteLine($"Found {commandsReturningValues.Count} commands that return values:");
-        foreach (var command in commandsReturningValues)
-        {
-            _output.WriteLine($"- {command}");
-        }
+        foreach (var command in commandsReturningValues) _output.WriteLine($"- {command}");
 
         Assert.Empty(commandsReturningValues);
     }
@@ -67,7 +59,7 @@ public class CqrsPatternTests
         var queries = Types
             .InAssembly(assembly)
             .That()
-            .ImplementInterface(typeof(MediatR.IRequest<>))
+            .ImplementInterface(typeof(IRequest<>))
             .And()
             .HaveNameEndingWith("Query")
             .GetTypes();
@@ -79,7 +71,7 @@ public class CqrsPatternTests
             var handlers = Types
                 .InAssembly(assembly)
                 .That()
-                .ImplementInterface(typeof(MediatR.IRequestHandler<,>))
+                .ImplementInterface(typeof(IRequestHandler<,>))
                 .And()
                 .HaveNameMatching($".*{query.Name}Handler")
                 .GetTypes();
@@ -88,30 +80,23 @@ public class CqrsPatternTests
             {
                 var methods = handler.GetMethods();
                 foreach (var method in methods)
-                {
                     if (method.Name == "Handle")
                     {
                         // Check if Handle method contains calls that may cause side effects
                         // This is a simplified approach, in reality we would need code analysis
                         var methodString = method.ToString() ?? string.Empty;
-                        if (methodString.Contains("SaveChanges") || 
-                            methodString.Contains("Update") || 
-                            methodString.Contains("Delete") || 
+                        if (methodString.Contains("SaveChanges") ||
+                            methodString.Contains("Update") ||
+                            methodString.Contains("Delete") ||
                             methodString.Contains("Add"))
-                        {
                             queriesWithSideEffects.Add(query.Name);
-                        }
                     }
-                }
             }
         }
 
         // Assert
         _output.WriteLine($"Found {queriesWithSideEffects.Count} queries that may have side effects:");
-        foreach (var query in queriesWithSideEffects)
-        {
-            _output.WriteLine($"- {query}");
-        }
+        foreach (var query in queriesWithSideEffects) _output.WriteLine($"- {query}");
 
         Assert.Empty(queriesWithSideEffects);
     }
@@ -126,9 +111,9 @@ public class CqrsPatternTests
         var commands = Types
             .InAssembly(assembly)
             .That()
-            .ImplementInterface(typeof(MediatR.IRequest<>))
+            .ImplementInterface(typeof(IRequest<>))
             .Or()
-            .ImplementInterface(typeof(MediatR.IRequest))
+            .ImplementInterface(typeof(IRequest))
             .And()
             .HaveNameEndingWith("Command")
             .GetTypes();
@@ -139,10 +124,7 @@ public class CqrsPatternTests
 
         // Assert
         _output.WriteLine($"Found {commandsNotInCommandsNamespace.Count} commands not in Commands namespace:");
-        foreach (var command in commandsNotInCommandsNamespace)
-        {
-            _output.WriteLine($"- {command.FullName}");
-        }
+        foreach (var command in commandsNotInCommandsNamespace) _output.WriteLine($"- {command.FullName}");
 
         Assert.Empty(commandsNotInCommandsNamespace);
     }
@@ -157,7 +139,7 @@ public class CqrsPatternTests
         var queries = Types
             .InAssembly(assembly)
             .That()
-            .ImplementInterface(typeof(MediatR.IRequest<>))
+            .ImplementInterface(typeof(IRequest<>))
             .And()
             .HaveNameEndingWith("Query")
             .GetTypes();
@@ -168,10 +150,7 @@ public class CqrsPatternTests
 
         // Assert
         _output.WriteLine($"Found {queriesNotInQueriesNamespace.Count} queries not in Queries namespace:");
-        foreach (var query in queriesNotInQueriesNamespace)
-        {
-            _output.WriteLine($"- {query.FullName}");
-        }
+        foreach (var query in queriesNotInQueriesNamespace) _output.WriteLine($"- {query.FullName}");
 
         Assert.Empty(queriesNotInQueriesNamespace);
     }
@@ -186,7 +165,7 @@ public class CqrsPatternTests
         var commandHandlers = Types
             .InAssembly(assembly)
             .That()
-            .ImplementInterface(typeof(MediatR.IRequestHandler<,>))
+            .ImplementInterface(typeof(IRequestHandler<,>))
             .And()
             .HaveNameEndingWith("CommandHandler")
             .GetTypes();
@@ -197,7 +176,7 @@ public class CqrsPatternTests
         {
             var interfaces = handler.GetInterfaces();
             var commandInterfaces = interfaces
-                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(MediatR.IRequestHandler<,>))
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>))
                 .ToList();
 
             if (commandInterfaces.Count > 1)
@@ -205,17 +184,15 @@ public class CqrsPatternTests
                 var commandNames = commandInterfaces
                     .Select(i => i.GetGenericArguments()[0].Name)
                     .ToList();
-                
+
                 handlersWithMultipleCommands.Add($"{handler.Name} -> {string.Join(", ", commandNames)}");
             }
         }
 
         // Assert
-        _output.WriteLine($"Found {handlersWithMultipleCommands.Count} command handlers that handle multiple commands:");
-        foreach (var handler in handlersWithMultipleCommands)
-        {
-            _output.WriteLine($"- {handler}");
-        }
+        _output.WriteLine(
+            $"Found {handlersWithMultipleCommands.Count} command handlers that handle multiple commands:");
+        foreach (var handler in handlersWithMultipleCommands) _output.WriteLine($"- {handler}");
 
         Assert.Empty(handlersWithMultipleCommands);
     }
@@ -230,7 +207,7 @@ public class CqrsPatternTests
         var queryHandlers = Types
             .InAssembly(assembly)
             .That()
-            .ImplementInterface(typeof(MediatR.IRequestHandler<,>))
+            .ImplementInterface(typeof(IRequestHandler<,>))
             .And()
             .HaveNameEndingWith("QueryHandler")
             .GetTypes();
@@ -241,7 +218,7 @@ public class CqrsPatternTests
         {
             var interfaces = handler.GetInterfaces();
             var queryInterfaces = interfaces
-                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(MediatR.IRequestHandler<,>))
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequestHandler<,>))
                 .ToList();
 
             if (queryInterfaces.Count > 1)
@@ -249,18 +226,15 @@ public class CqrsPatternTests
                 var queryNames = queryInterfaces
                     .Select(i => i.GetGenericArguments()[0].Name)
                     .ToList();
-                
+
                 handlersWithMultipleQueries.Add($"{handler.Name} -> {string.Join(", ", queryNames)}");
             }
         }
 
         // Assert
         _output.WriteLine($"Found {handlersWithMultipleQueries.Count} query handlers that handle multiple queries:");
-        foreach (var handler in handlersWithMultipleQueries)
-        {
-            _output.WriteLine($"- {handler}");
-        }
+        foreach (var handler in handlersWithMultipleQueries) _output.WriteLine($"- {handler}");
 
         Assert.Empty(handlersWithMultipleQueries);
     }
-} 
+}

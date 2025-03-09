@@ -7,12 +7,12 @@ using Serilog.Events;
 namespace CardActions.Api.Extensions;
 
 /// <summary>
-/// Configuration extensions for logging and monitoring
+///     Rozszerzenia konfiguracyjne dla logowania i monitorowania
 /// </summary>
 public static class LoggingExtensions
 {
     /// <summary>
-    /// Adds logging configuration to services
+    ///     Dodaje konfigurację logowania do usług
     /// </summary>
     public static ILoggingBuilder AddLoggingConfiguration(this ILoggingBuilder logging)
     {
@@ -24,7 +24,7 @@ public static class LoggingExtensions
     }
 
     /// <summary>
-    /// Configures Serilog for the application
+    ///     Konfiguruje Serilog dla aplikacji
     /// </summary>
     public static WebApplicationBuilder AddSerilogConfiguration(this WebApplicationBuilder builder)
     {
@@ -46,12 +46,13 @@ public static class LoggingExtensions
     }
 
     /// <summary>
-    /// Adds OpenTelemetry configuration to services
+    ///     Dodaje konfigurację OpenTelemetry do usług
     /// </summary>
-    public static IServiceCollection AddOpenTelemetryConfiguration(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddOpenTelemetryConfiguration(this IServiceCollection services,
+        IConfiguration configuration)
     {
         var resourceBuilder = ResourceBuilder.CreateDefault()
-            .AddService(serviceName: "CardActions.Api",
+            .AddService("CardActions.Api",
                 serviceVersion: typeof(LoggingExtensions).Assembly.GetName().Version?.ToString() ?? "unknown")
             .AddAttributes(new Dictionary<string, object>
             {
@@ -74,4 +75,4 @@ public static class LoggingExtensions
 
         return services;
     }
-} 
+}

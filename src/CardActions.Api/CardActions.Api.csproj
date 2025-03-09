@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk.Web">
-    
+
     <PropertyGroup>
         <EnableDefaultContentItems>false</EnableDefaultContentItems>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <PackageReference Include="OpenTelemetry"/>
         <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
@@ -24,7 +24,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\CardActions.Application\CardActions.Application.csproj"/>
-        <ProjectReference Include="..\CardActions.Infrastructure.Data\CardActions.Infrastructure.Data.csproj" />
+        <ProjectReference Include="..\CardActions.Infrastructure.Data\CardActions.Infrastructure.Data.csproj"/>
         <ProjectReference Include="..\CardActions.Infrastructure\CardActions.Infrastructure.csproj"/>
     </ItemGroup>
 

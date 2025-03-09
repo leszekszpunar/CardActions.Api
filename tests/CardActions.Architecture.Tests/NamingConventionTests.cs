@@ -1,17 +1,16 @@
 using System.Reflection;
-using NetArchTest.Rules;
-using Xunit;
 using CardActions.Architecture.Tests.Helpers;
+using NetArchTest.Rules;
 
 namespace CardActions.Architecture.Tests;
 
 public class NamingConventionTests
 {
-    private readonly Assembly _domainAssembly;
+    private readonly Assembly _apiAssembly;
     private readonly Assembly _applicationAssembly;
+    private readonly Assembly _domainAssembly;
     private readonly Assembly _infrastructureAssembly;
     private readonly Assembly _infrastructureDataAssembly;
-    private readonly Assembly _apiAssembly;
 
     public NamingConventionTests()
     {
@@ -41,7 +40,8 @@ public class NamingConventionTests
     [Fact]
     public void Interfaces_Should_Start_With_I()
     {
-        foreach (var assembly in new[] { _domainAssembly, _applicationAssembly, _infrastructureAssembly, _infrastructureDataAssembly })
+        foreach (var assembly in new[]
+                     { _domainAssembly, _applicationAssembly, _infrastructureAssembly, _infrastructureDataAssembly })
         {
             var testResult = Types
                 .InAssembly(assembly)
@@ -140,9 +140,9 @@ public class NamingConventionTests
         AssertNamingConvention(testResult, "Controllers should have 'Controller' suffix");
     }
 
-    private static void AssertNamingConvention(NetArchTest.Rules.TestResult testResult, string message)
+    private static void AssertNamingConvention(TestResult testResult, string message)
     {
         var failingTypeNames = testResult.FailingTypeNames ?? Array.Empty<string>();
         Assert.True(testResult.IsSuccessful, $"{message}: {string.Join(", ", failingTypeNames)}");
     }
-} 
+}

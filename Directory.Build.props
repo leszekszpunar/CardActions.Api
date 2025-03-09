@@ -14,7 +14,7 @@
         <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- Disable warning for missing XML comments -->
         <InvariantGlobalization>false</InvariantGlobalization>
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-        
+
         <!-- Informacje o projekcie -->
         <Authors>Leszek Szpunar</Authors>
         <Company>IT</Company>

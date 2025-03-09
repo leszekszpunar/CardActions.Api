@@ -4,46 +4,42 @@
     "url": "https://github.com/leszekszpunar/CardActions.Api.git"
   },
   "branches": [
-    "main",
+    {
+      "name": "main",
+      "channel": "latest"
+    },
     {
       "name": "develop",
-      "prerelease": true,
+      "prerelease": "develop",
       "channel": "beta"
     }
   ],
   "plugins": [
-    ["@semantic-release/commit-analyzer", {
-      "preset": "angular",
-      "releaseRules": [
-        {"type": "feat", "release": "minor"},
-        {"type": "fix", "release": "patch"},
-        {"type": "perf", "release": "patch"},
-        {"type": "docs", "scope": "README", "release": "patch"},
-        {"type": "refactor", "release": "patch"},
-        {"type": "style", "release": "patch"},
-        {"type": "test", "release": "patch"},
-        {"type": "chore", "release": "patch"},
-        {"type": "ci", "release": "patch"},
-        {"type": "build", "release": "patch"}
-      ]
-    }],
-    ["@semantic-release/release-notes-generator", {
-      "preset": "angular"
-    }],
-    ["@semantic-release/changelog", {
-      "changelogFile": "CHANGELOG.md"
-    }],
-    ["@semantic-release/git", {
-      "assets": ["CHANGELOG.md", "VERSION", "Directory.Build.props"],
-      "message": "chore(release): ${nextRelease.version} [skip ci]"
-    }],
-    ["@semantic-release/github", {
-      "assets": [
-        {"path": "publish/*", "label": "Release ${nextRelease.version}"}
-      ]
-    }],
-    ["@semantic-release/exec", {
-      "prepareCmd": "echo ${nextRelease.version} > VERSION && sed -i 's|<Version>.*</Version>|<Version>${nextRelease.version}</Version>|g' Directory.Build.props"
-    }]
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "${process.env.GITHUB_REF_NAME === 'main' ? 'CHANGELOG.md' : 'CHANGELOG-develop.md'}",
+        "changelogTitle": "# Changelog ${process.env.GITHUB_REF_NAME === 'main' ? '' : 'Development'}"
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "echo ${nextRelease.version} > VERSION"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "${process.env.GITHUB_REF_NAME === 'main' ? 'CHANGELOG.md' : 'CHANGELOG-develop.md'}",
+          "VERSION"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    "@semantic-release/github"
   ]
 }
