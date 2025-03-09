@@ -1,12 +1,13 @@
 services:
+  # Produkcja - używa gałęzi main
   - type: web
-    name: cardactions-api
+    name: cardactions-api-latest
     runtime: docker
     repo: https://github.com/leszekszpunar/CardActions.Api
     region: frankfurt
     plan: free
     branch: main
-    healthCheckPath: /ping
+    healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -26,4 +27,34 @@ services:
         value: "/health"
     autoDeploy: true
     domains:
-      - cardactions-api.onrender.com 
+      - cardactions-api-latest.onrender.com
+
+  # Development - używa gałęzi develop
+  - type: web
+    name: cardactions-api-beta
+    runtime: docker
+    repo: https://github.com/leszekszpunar/CardActions.Api
+    region: frankfurt
+    plan: free
+    branch: develop
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Development
+      - key: DOTNET_GCHeapHardLimit
+        value: 428MB
+      - key: DOTNET_gcConcurrent
+        value: "true"
+      - key: DOTNET_gcServer 
+        value: "false"
+      - key: ASPNETCORE_hostBuilder__reloadConfigOnChange
+        value: "false"
+      - key: ASPNETCORE_Kestrel__Limits__MaxConcurrentConnections
+        value: "100"
+      - key: ASPNETCORE_Kestrel__Limits__MaxConcurrentUpgradedConnections
+        value: "50"
+      - key: ASPNETCORE_HEALTH_PATH
+        value: "/health"
+    autoDeploy: true
+    domains:
+      - cardactions-api-beta.onrender.com
