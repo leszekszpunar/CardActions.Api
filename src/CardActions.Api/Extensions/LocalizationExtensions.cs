@@ -6,31 +6,31 @@ using Microsoft.AspNetCore.Localization;
 namespace CardActions.Api.Extensions;
 
 /// <summary>
-/// Configuration extensions for localization
+///     Rozszerzenia konfiguracyjne dla lokalizacji
 /// </summary>
 public static class LocalizationExtensions
 {
     /// <summary>
-    /// Adds localization configuration to services
+    ///     Dodaje konfigurację lokalizacji do usług
     /// </summary>
     public static IServiceCollection AddLocalizationConfiguration(this IServiceCollection services)
     {
-        // Rejestracja StringLocalizerWrapper jako ILocalizationService
-        services.AddSingleton<ILocalizationService, StringLocalizerWrapper>();
-
-        // Konfiguracja obsługiwanych kultur
-        var supportedCultures = new[]
-        {
-            new CultureInfo("pl"),
-            new CultureInfo("en"),
-        };
+        services.AddLocalization(options => options.ResourcesPath = "Resources");
 
         services.Configure<RequestLocalizationOptions>(options =>
         {
-            options.DefaultRequestCulture = new RequestCulture("pl");
+            var supportedCultures = new[]
+            {
+                new CultureInfo("pl-PL"),
+                new CultureInfo("en-US")
+            };
+
+            options.DefaultRequestCulture = new RequestCulture("pl-PL");
             options.SupportedCultures = supportedCultures;
             options.SupportedUICultures = supportedCultures;
         });
+
+        services.AddSingleton<ILocalizationService, StringLocalizerWrapper>();
 
         return services;
     }

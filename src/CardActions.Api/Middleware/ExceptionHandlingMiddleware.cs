@@ -1,19 +1,18 @@
 using System.Net;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using CardActions.Application.Common.Exceptions;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 
 namespace CardActions.Api.Middleware;
 
 /// <summary>
-/// Globalny middleware obsługi wyjątków, zwracający `ProblemDetails`.
+///     Globalny middleware obsługi wyjątków, zwracający `ProblemDetails`.
 /// </summary>
 public class ExceptionHandlingMiddleware
 {
-    private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly RequestDelegate _next;
 
     public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
@@ -49,7 +48,7 @@ public class ExceptionHandlingMiddleware
 
         switch (exception)
         {
-            case FluentValidation.ValidationException validationException:
+            case ValidationException validationException:
                 response.StatusCode = (int)HttpStatusCode.BadRequest;
                 problemDetails.Status = response.StatusCode;
                 problemDetails.Title = "Validation error";

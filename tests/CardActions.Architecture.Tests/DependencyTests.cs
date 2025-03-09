@@ -1,9 +1,5 @@
-using NetArchTest.Rules;
-using System;
-using System.Linq;
-using System.Reflection;
-using Xunit;
 using CardActions.Architecture.Tests.Helpers;
+using NetArchTest.Rules;
 
 namespace CardActions.Architecture.Tests;
 
@@ -32,7 +28,8 @@ public class DependencyTests
 
         // Assert
         var failingTypeNames = testResult.FailingTypeNames ?? Array.Empty<string>();
-        Assert.True(testResult.IsSuccessful, $"Domain layer should not have dependencies on other projects: {string.Join(", ", failingTypeNames)}");
+        Assert.True(testResult.IsSuccessful,
+            $"Domain layer should not have dependencies on other projects: {string.Join(", ", failingTypeNames)}");
     }
 
     [Fact]
@@ -57,7 +54,8 @@ public class DependencyTests
 
         // Assert
         var failingTypeNames = testResult.FailingTypeNames ?? Array.Empty<string>();
-        Assert.True(testResult.IsSuccessful, $"Application layer should only depend on Domain layer: {string.Join(", ", failingTypeNames)}");
+        Assert.True(testResult.IsSuccessful,
+            $"Application layer should only depend on Domain layer: {string.Join(", ", failingTypeNames)}");
     }
 
     [Fact]
@@ -75,7 +73,8 @@ public class DependencyTests
 
         // Assert
         var failingTypeNames = testResult.FailingTypeNames ?? Array.Empty<string>();
-        Assert.True(testResult.IsSuccessful, $"Infrastructure layer should not have dependencies on API layer: {string.Join(", ", failingTypeNames)}");
+        Assert.True(testResult.IsSuccessful,
+            $"Infrastructure layer should not have dependencies on API layer: {string.Join(", ", failingTypeNames)}");
     }
 
     [Fact]
@@ -83,20 +82,21 @@ public class DependencyTests
     {
         // Arrange
         var dataAssembly = NamespaceHelper.GetInfrastructureDataAssembly();
-        
+
         // Sprawdź faktyczne referencje projektu
         var referencedAssemblies = dataAssembly.GetReferencedAssemblies();
-        
+
         // Act & Assert
         // Sprawdź, czy nie ma bezpośredniej referencji do CardActions.Infrastructure
         var hasInfrastructureDependency = referencedAssemblies
             .Any(a => a.Name == "CardActions.Infrastructure");
-        
+
         // Sprawdź, czy nie ma bezpośredniej referencji do CardActions.Api
         var hasApiDependency = referencedAssemblies
             .Any(a => a.Name == "CardActions.Api");
-        
-        Assert.False(hasInfrastructureDependency, "Infrastructure.Data nie powinno mieć bezpośredniej zależności od Infrastructure");
+
+        Assert.False(hasInfrastructureDependency,
+            "Infrastructure.Data nie powinno mieć bezpośredniej zależności od Infrastructure");
         Assert.False(hasApiDependency, "Infrastructure.Data nie powinno mieć bezpośredniej zależności od Api");
     }
 
@@ -119,7 +119,8 @@ public class DependencyTests
 
         // Assert
         var failingTypeNames = testResult.FailingTypeNames ?? Array.Empty<string>();
-        Assert.True(testResult.IsSuccessful, $"Controllers should have 'Controller' suffix: {string.Join(", ", failingTypeNames)}");
+        Assert.True(testResult.IsSuccessful,
+            $"Controllers should have 'Controller' suffix: {string.Join(", ", failingTypeNames)}");
     }
 
     [Fact]
@@ -171,4 +172,4 @@ public class DependencyTests
         // Assert
         Assert.Empty(failingTypes);
     }
-} 
+}

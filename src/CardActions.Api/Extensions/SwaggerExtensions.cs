@@ -4,14 +4,15 @@ using NSwag;
 namespace CardActions.Api.Extensions;
 
 /// <summary>
-/// Rozszerzenia konfiguracyjne dla Swagger/OpenAPI
+///     Rozszerzenia konfiguracyjne dla Swagger/OpenAPI
 /// </summary>
 public static class SwaggerExtensions
 {
     /// <summary>
-    /// Dodaje konfigurację Swagger/OpenAPI do serwisów
+    ///     Dodaje konfigurację Swagger/OpenAPI do serwisów
     /// </summary>
-    public static IServiceCollection AddSwaggerDocumentation(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddSwaggerDocumentation(this IServiceCollection services,
+        IConfiguration configuration)
     {
         var disableSwagger = configuration["DisableSwagger"] == "true";
         if (!disableSwagger)
@@ -76,9 +77,10 @@ API umożliwia sprawdzenie dozwolonych akcji dla karty płatniczej na podstawie:
     }
 
     /// <summary>
-    /// Konfiguruje middleware Swagger/OpenAPI
+    ///     Konfiguruje middleware Swagger/OpenAPI
     /// </summary>
-    public static IApplicationBuilder UseSwaggerDocumentation(this IApplicationBuilder app, IConfiguration configuration)
+    public static IApplicationBuilder UseSwaggerDocumentation(this IApplicationBuilder app,
+        IConfiguration configuration)
     {
         var disableSwagger = configuration["DisableSwagger"] == "true";
         if (!disableSwagger)
@@ -105,4 +107,4 @@ API umożliwia sprawdzenie dozwolonych akcji dla karty płatniczej na podstawie:
 
         return app;
     }
-} 
+}

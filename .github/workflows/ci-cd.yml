@@ -32,28 +32,28 @@ jobs:
       contents: read
       checks: write  # dla testów
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    
-    - name: Build and Test
-      run: |
-        dotnet restore
-        dotnet build --no-restore --configuration Release
-        dotnet test --no-build --configuration Release
-        dotnet publish src/CardActions.Api/CardActions.Api.csproj -c Release -o publish
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: api-artifact
-        path: publish/
-        retention-days: 1
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build and Test
+        run: |
+          dotnet restore
+          dotnet build --no-restore --configuration Release
+          dotnet test --no-build --configuration Release
+          dotnet publish src/CardActions.Api/CardActions.Api.csproj -c Release -o publish
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-artifact
+          path: publish/
+          retention-days: 1
 
   # 2. Semantic Release
   release:
@@ -68,43 +68,43 @@ jobs:
       version: ${{ steps.semantic.outputs.new_release_version }}
       channel: ${{ github.ref == 'refs/heads/main' && 'latest' || 'beta' }}
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        persist-credentials: false
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 'lts/*'
-    
-    - name: Install dependencies
-      run: |
-        npm install --no-package-lock --no-save \
-          semantic-release@21.0.1 \
-          @semantic-release/commit-analyzer \
-          @semantic-release/release-notes-generator \
-          @semantic-release/github \
-          @semantic-release/exec \
-          @semantic-release/changelog \
-          @semantic-release/git
-    
-    - name: Semantic Release
-      id: semantic
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        # Uruchom semantic-release i zapisz output
-        SEMANTIC_OUTPUT=$(npx semantic-release)
-        echo "Semantic Release Output: $SEMANTIC_OUTPUT"
-        
-        # Pobierz najnowszy tag
-        VERSION=$(git describe --tags --abbrev=0)
-        echo "Latest Tag: $VERSION"
-        
-        # Ustaw zmienną wyjściową
-        echo "new_release_version=${VERSION#v}" >> $GITHUB_OUTPUT
-        echo "Version Output: ${VERSION#v}"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: |
+          npm install --no-package-lock --no-save \
+            semantic-release@21.0.1 \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/github \
+            @semantic-release/exec \
+            @semantic-release/changelog \
+            @semantic-release/git
+
+      - name: Semantic Release
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Uruchom semantic-release i zapisz output
+          SEMANTIC_OUTPUT=$(npx semantic-release)
+          echo "Semantic Release Output: $SEMANTIC_OUTPUT"
+          
+          # Pobierz najnowszy tag
+          VERSION=$(git describe --tags --abbrev=0)
+          echo "Latest Tag: $VERSION"
+          
+          # Ustaw zmienną wyjściową
+          echo "new_release_version=${VERSION#v}" >> $GITHUB_OUTPUT
+          echo "Version Output: ${VERSION#v}"
 
   # 3. Build i push Docker image
   docker:
@@ -116,61 +116,61 @@ jobs:
       contents: read
       security-events: write  # dla SBOM i provenance
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Download build artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: api-artifact
-        path: publish/
-    
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-    
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v4
-      with:
-        images: ghcr.io/${{ github.repository_owner }}/cardactions-api
-        tags: |
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=raw,value=${{ needs.release.outputs.channel }}
-          type=sha,prefix=${{ needs.release.outputs.channel }}-
-        flavor: |
-          latest=auto
-          prefix=
-          suffix=
-        labels: |
-          org.opencontainers.image.title=CardActions API
-          org.opencontainers.image.description=Card Actions API for Millennium Project
-          org.opencontainers.image.version=${{ needs.release.outputs.version }}
-          org.opencontainers.image.created=${{ github.event.repository.updated_at }}
-          org.opencontainers.image.revision=${{ github.sha }}
-          org.opencontainers.image.version.channel=${{ needs.release.outputs.channel }}
-          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-          org.opencontainers.image.licenses=MIT
-    
-    - name: Build and push
-      uses: docker/build-push-action@v4
-      with:
-        context: publish/
-        file: ./Dockerfile
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        provenance: true
-        sbom: true
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-artifact
+          path: publish/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/cardactions-api
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=${{ needs.release.outputs.channel }}
+            type=sha,prefix=${{ needs.release.outputs.channel }}-
+          flavor: |
+            latest=auto
+            prefix=
+            suffix=
+          labels: |
+            org.opencontainers.image.title=CardActions API
+            org.opencontainers.image.description=Card Actions API for Millennium Project
+            org.opencontainers.image.version=${{ needs.release.outputs.version }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version.channel=${{ needs.release.outputs.channel }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: publish/
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
 
   # 4. Deploy dokumentacji do GitHub Pages
   deploy-docs:
@@ -188,47 +188,47 @@ jobs:
       page_url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        enablement: true
-    
-    - name: Prepare Documentation
-      run: |
-        mkdir -p docs-build
-        cp README.md docs-build/index.md
-        
-        # Dodaj config.json z informacjami o wersji
-        cat > docs-build/config.json << EOF
-        {
-          "version": "${{ needs.release.outputs.version }}",
-          "channel": "${{ needs.release.outputs.channel }}",
-          "apiUrl": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
-        }
-        EOF
-    
-    - name: Upload Pages artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: docs-build
-    
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
 
-    - name: Display deployment URL
-      run: |
-        echo "Documentation deployed to: ${{ steps.deployment.outputs.page_url }}"
-        echo "page_url=${{ steps.deployment.outputs.page_url }}" >> $GITHUB_OUTPUT
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          enablement: true
 
-  # 5. Konfiguracja środowiska
+      - name: Prepare Documentation
+        run: |
+          mkdir -p docs-build
+          cp README.md docs-build/index.md
+          
+          # Dodaj config.json z informacjami o wersji
+          cat > docs-build/config.json << EOF
+          {
+            "version": "${{ needs.release.outputs.version }}",
+            "channel": "${{ needs.release.outputs.channel }}",
+            "apiUrl": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
+          }
+          EOF
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs-build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Display deployment URL
+        run: |
+          echo "Documentation deployed to: ${{ steps.deployment.outputs.page_url }}"
+          echo "page_url=${{ steps.deployment.outputs.page_url }}" >> $GITHUB_OUTPUT
+
+  # 5. Deploy to environments
   deploy:
-    needs: [docker, release]
+    needs: [ docker, release ]
     if: needs.release.outputs.version != ''
     runs-on: ubuntu-latest
     permissions:
@@ -236,46 +236,80 @@ jobs:
       deployments: write
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-      url: ${{ steps.create_config.outputs.docs_url }}
+      url: ${{ steps.deploy.outputs.service_url }}
     steps:
-    - name: Create Deployment Config
-      id: create_config
-      run: |
-        # Ustaw URL dokumentacji
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          DOCS_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
-        else
-          DOCS_URL="https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/blob/develop/README.md"
-        fi
-        echo "docs_url=$DOCS_URL" >> $GITHUB_OUTPUT
-        
-        cat > deployment.json << EOF
-        {
-          "version": "${{ needs.release.outputs.version }}",
-          "channel": "${{ needs.release.outputs.channel }}",
-          "environment": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
-          "dockerImage": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}",
-          "docsUrl": "$DOCS_URL"
-        }
-        EOF
-        
-        echo "Configuration Summary:"
-        echo "Version: ${{ needs.release.outputs.version }}"
-        echo "Channel: ${{ needs.release.outputs.channel }}"
-        echo "Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}"
-        echo "Docker Image: ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
-        echo "Documentation URL: $DOCS_URL"
-    
-    - name: Upload Deployment Config
-      uses: actions/upload-artifact@v4
-      with:
-        name: deployment-config-${{ needs.release.outputs.channel }}
-        path: deployment.json
-        retention-days: 30
+      - name: Deploy to Render
+        id: deploy
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+
+      - name: Update service image
+        run: |
+          curl -X PATCH \
+          -H "Accept: application/json" \
+          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}" \
+          -d '{
+            "imageTag": "${{ needs.release.outputs.channel }}"
+          }'
+
+      - name: Set environment variables
+        run: |
+          curl -X PATCH \
+          -H "Accept: application/json" \
+          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/env-vars" \
+          -d '{
+            "envVars": [
+              {
+                "key": "ASPNETCORE_ENVIRONMENT",
+                "value": "${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}"
+              }
+            ]
+          }'
+
+      - name: Create Deployment Config
+        id: create_config
+        run: |
+          # Set documentation URL
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            DOCS_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          else
+            DOCS_URL="https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/blob/develop/README.md"
+          fi
+          echo "docs_url=$DOCS_URL" >> $GITHUB_OUTPUT
+          
+          cat > deployment.json << EOF
+          {
+            "version": "${{ needs.release.outputs.version }}",
+            "channel": "${{ needs.release.outputs.channel }}",
+            "environment": "${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}",
+            "dockerImage": "ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}",
+            "docsUrl": "$DOCS_URL"
+          }
+          EOF
+          
+          echo "Configuration Summary:"
+          echo "Version: ${{ needs.release.outputs.version }}"
+          echo "Channel: ${{ needs.release.outputs.channel }}"
+          echo "Environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}"
+          echo "Docker Image: ghcr.io/${{ github.repository_owner }}/cardactions-api:${{ needs.release.outputs.version }}"
+          echo "Documentation URL: $DOCS_URL"
+
+      - name: Upload Deployment Config
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-config-${{ needs.release.outputs.channel }}
+          path: deployment.json
+          retention-days: 30
 
   # 6. Cleanup starych obrazów Docker
   cleanup:
-    needs: [docker, deploy]
+    needs: [ docker, deploy ]
     if: always() && needs.docker.result == 'success'
     runs-on: ubuntu-latest
     permissions:

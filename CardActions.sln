@@ -24,6 +24,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "items", "items", "{CAD8CCBE
 		docker-compose.yml = docker-compose.yml
 		Dockerfile = Dockerfile
 		.releaserc.json = .releaserc.json
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardActions.Architecture.Tests", "tests\CardActions.Architecture.Tests\CardActions.Architecture.Tests.csproj", "{C6F53F80-13AC-4285-B54D-6F198AA28B12}"

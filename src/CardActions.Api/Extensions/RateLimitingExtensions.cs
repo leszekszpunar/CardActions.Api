@@ -1,47 +1,51 @@
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace CardActions.Api.Extensions;
 
 /// <summary>
-/// Configuration extensions for rate limiting
+///     Rozszerzenia konfiguracyjne dla limitowania żądań
 /// </summary>
 public static class RateLimitingExtensions
 {
     /// <summary>
-    /// Adds rate limiting configuration to services
+    ///     Dodaje konfigurację limitowania żądań do usług
     /// </summary>
     public static IServiceCollection AddRateLimitingConfiguration(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
         {
-            options.AddFixedWindowLimiter("api", options =>
-            {
-                options.PermitLimit = 30;
-                options.Window = TimeSpan.FromSeconds(10);
-                options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                options.QueueLimit = 2;
-            });
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.Connection.RemoteIpAddress?.ToString() ?? httpContext.Request.Headers.Host.ToString(),
+                    partition => new FixedWindowRateLimiterOptions
+                    {
+                        AutoReplenishment = true,
+                        PermitLimit = 100,
+                        QueueLimit = 0,
+                        Window = TimeSpan.FromMinutes(1)
+                    }));
 
-            options.OnRejected = async (context, _) =>
+            options.AddPolicy("api", httpContext =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    httpContext.Connection.RemoteIpAddress?.ToString() ?? httpContext.Request.Headers.Host.ToString(),
+                    partition => new FixedWindowRateLimiterOptions
+                    {
+                        AutoReplenishment = true,
+                        PermitLimit = 10,
+                        QueueLimit = 0,
+                        Window = TimeSpan.FromSeconds(10)
+                    }));
+
+            options.OnRejected = async (context, token) =>
             {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                context.HttpContext.Response.ContentType = "application/problem+json";
-
-                var problem = new ProblemDetails
-                {
-                    Status = StatusCodes.Status429TooManyRequests,
-                    Title = "Too Many Requests",
-                    Type = "https://tools.ietf.org/html/rfc6585#section-4",
-                    Detail = "API rate limit has been exceeded. Please try again later.",
-                    Instance = context.HttpContext.Request.Path
-                };
-
-                await context.HttpContext.Response.WriteAsJsonAsync(problem);
+                context.HttpContext.Response.ContentType = "application/json";
+                await context.HttpContext.Response.WriteAsync(
+                    """{"title":"Too Many Requests","status":429,"detail":"Przekroczono limit żądań. Spróbuj ponownie później."}""",
+                    token);
             };
         });
 
         return services;
     }
-} 
+}
