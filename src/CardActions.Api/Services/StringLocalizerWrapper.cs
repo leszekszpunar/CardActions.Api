@@ -21,6 +21,17 @@ internal class StringLocalizerWrapper : ILocalizationService
         _resourcesPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources/Languages");
         _cache = cache;
         _logger = logger;
+
+        // Log dostępnych plików lokalizacji
+        if (Directory.Exists(_resourcesPath))
+        {
+            var files = Directory.GetFiles(_resourcesPath, "*.json");
+            _logger.LogInformation("Available localization files: {Files}", string.Join(", ", files));
+        }
+        else
+        {
+            _logger.LogWarning("Localization directory does not exist: {ResourcePath}", _resourcesPath);
+        }
     }
 
     public string GetString(string key)
@@ -33,9 +44,27 @@ internal class StringLocalizerWrapper : ILocalizationService
         var culture = CultureInfo.CurrentUICulture.Name;
         var translations = LoadTranslations(culture);
 
-        if (translations.TryGetValue(key, out var value)) return args.Length > 0 ? string.Format(value, args) : value;
+        if (translations.TryGetValue(key, out var value))
+            return args.Length > 0 ? string.Format(value, args) : value;
 
-        _logger.LogWarning($"Translation key '{key}' not found in {culture}.json");
+        // Jeśli nie znaleziono, próbujemy użyć kodu języka bez regionu (pl-PL -> pl)
+        var languageCode = culture.Split('-')[0];
+        if (languageCode != culture)
+        {
+            translations = LoadTranslations(languageCode);
+            if (translations.TryGetValue(key, out value))
+                return args.Length > 0 ? string.Format(value, args) : value;
+        }
+
+        // Jeśli nadal nie znaleziono, próbujemy użyć angielskiego jako fallback
+        if (culture != "en" && languageCode != "en")
+        {
+            translations = LoadTranslations("en");
+            if (translations.TryGetValue(key, out value))
+                return args.Length > 0 ? string.Format(value, args) : value;
+        }
+
+        _logger.LogWarning("Translation key '{Key}' not found in {Culture}.json", key, culture);
         return $"[{key}]"; // Fallback jeśli klucz nie istnieje
     }
 
@@ -48,7 +77,7 @@ internal class StringLocalizerWrapper : ILocalizationService
             var filePath = Path.Combine(_resourcesPath, $"{culture}.json");
             if (!File.Exists(filePath))
             {
-                _logger.LogWarning($"Localization file not found: {filePath}");
+                _logger.LogWarning("Localization file not found: {FilePath}", filePath);
                 return new Dictionary<string, string>();
             }
 
@@ -61,12 +90,13 @@ internal class StringLocalizerWrapper : ILocalizationService
             }
             catch (JsonException ex)
             {
-                _logger.LogError($"Error parsing localization file {filePath}: {ex.Message}");
+                _logger.LogError("Error parsing localization file {FilePath}: {Message}", filePath, ex.Message);
                 return new Dictionary<string, string>();
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Unexpected error reading localization file {filePath}: {ex.Message}");
+                _logger.LogError("Unexpected error reading localization file {FilePath}: {Message}", filePath,
+                    ex.Message);
                 return new Dictionary<string, string>();
             }
         }) ?? new Dictionary<string, string>();

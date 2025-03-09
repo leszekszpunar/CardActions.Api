@@ -20,6 +20,11 @@ internal class CardService : ICardService
     {
         _logger = logger;
         _userCards = CreateSampleUserCards();
+
+        // Log created users and number of cards for debugging
+        foreach (var user in _userCards.Keys)
+            _logger.LogInformation("Created sample user '{UserId}' with {CardCount} cards",
+                user, _userCards[user].Count);
     }
 
     /// <summary>
@@ -34,21 +39,25 @@ internal class CardService : ICardService
 
         // At this point, we would typically make an HTTP call to an external service
         // to fetch the data. For this example we use generated sample data.
-        await Task.Delay(1000);
+        await Task.Delay(100); // Reduced delay for better UX in development
 
         if (!_userCards.TryGetValue(userId, out var cards))
         {
-            _logger.LogWarning("User '{UserId}' not found", userId);
+            _logger.LogWarning("User '{UserId}' not found. Available users: {AvailableUsers}",
+                userId, string.Join(", ", _userCards.Keys));
             return null;
         }
 
         if (!cards.TryGetValue(cardNumber, out var cardDetails))
         {
-            _logger.LogWarning("Card '{CardNumber}' not found for user '{UserId}'", cardNumber, userId);
+            _logger.LogWarning("Card '{CardNumber}' not found for user '{UserId}'. Available cards: {AvailableCards}",
+                cardNumber, userId, string.Join(", ", cards.Keys.Take(5)) + (cards.Keys.Count > 5 ? "..." : ""));
             return null;
         }
 
-        _logger.LogInformation("Card '{CardNumber}' found for user '{UserId}'", cardNumber, userId);
+        _logger.LogInformation(
+            "Card '{CardNumber}' found for user '{UserId}'. Type: {CardType}, Status: {CardStatus}, HasPin: {HasPin}",
+            cardNumber, userId, cardDetails.CardType, cardDetails.CardStatus, cardDetails.IsPinSet);
         return cardDetails;
     }
 
