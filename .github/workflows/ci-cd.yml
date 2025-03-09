@@ -460,7 +460,7 @@ jobs:
         with:
           package-name: 'cardactions-api'
           package-type: 'container'
-          min-versions-to-keep: 3
+          min-versions-to-keep: 10
           delete-only-untagged-versions: true
 
       - name: Delete old stable versions
@@ -468,7 +468,7 @@ jobs:
         with:
           package-name: 'cardactions-api'
           package-type: 'container'
-          min-versions-to-keep: 5
+          min-versions-to-keep: 10
           delete-only-pre-release-versions: false
           ignore-versions: '^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$|^latest$|^beta$'
 
@@ -477,7 +477,7 @@ jobs:
         with:
           package-name: 'cardactions-api'
           package-type: 'container'
-          min-versions-to-keep: 5
+          min-versions-to-keep: 10
           delete-only-pre-release-versions: true
           ignore-versions: '^latest$|^beta$'
 
