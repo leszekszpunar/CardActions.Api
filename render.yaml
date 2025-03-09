@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: cardactions-api
+    runtime: docker
+    repo: https://github.com/leszekszpunar/CardActions.Api
+    region: frankfurt
+    plan: free
+    branch: main
+    healthCheckPath: /ping
+    startCommand: dotnet CardActions.Api.dll
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DOTNET_GCHeapHardLimit
+        value: 428MB      # Limit heap w .NET (512MB - ~80MB dla innych zasobów systemu)
+      - key: DOTNET_gcConcurrent
+        value: "true"     # Użyj współbieżnego GC
+      - key: DOTNET_gcServer 
+        value: "false"    # Wyłącz Server GC dla mniejszego zużycia pamięci
+      - key: ASPNETCORE_hostBuilder__reloadConfigOnChange
+        value: "false"    # Wyłącz automatyczne przeładowanie przy zmianie konfiguracji
+      - key: ASPNETCORE_Kestrel__Limits__MaxConcurrentConnections
+        value: "100"
+      - key: ASPNETCORE_Kestrel__Limits__MaxConcurrentUpgradedConnections
+        value: "50"
+      - key: ASPNETCORE_HEALTH_PATH
+        value: "/health"
+    autoDeploy: true
+    scaling:
+      minInstances: 1
+      maxInstances: 1
+      targetMemoryPercent: 80
+    domains:
+      - cardactions-api.onrender.com 
