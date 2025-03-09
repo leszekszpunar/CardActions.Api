@@ -379,17 +379,18 @@ jobs:
         with:
           package-name: 'cardactions-api'
           package-type: 'container'
-          min-versions-to-keep: 3
+          min-versions-to-keep: 5
           delete-only-pre-release-versions: false
-          ignore-versions: '^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$'
+          ignore-versions: '^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$|^latest$|^beta$'
 
       - name: Delete old beta versions
         uses: actions/delete-package-versions@v4
         with:
           package-name: 'cardactions-api'
           package-type: 'container'
-          min-versions-to-keep: 3
+          min-versions-to-keep: 5
           delete-only-pre-release-versions: true
+          ignore-versions: '^latest$|^beta$'
           
       - name: Delete old package with incorrect name format
         uses: actions/github-script@v6
