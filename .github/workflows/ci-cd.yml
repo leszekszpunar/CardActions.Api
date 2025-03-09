@@ -226,7 +226,7 @@ jobs:
           echo "Documentation deployed to: ${{ steps.deployment.outputs.page_url }}"
           echo "page_url=${{ steps.deployment.outputs.page_url }}" >> $GITHUB_OUTPUT
 
-  # 5. Konfiguracja środowiska
+  # 5. Deploy to environments
   deploy:
     needs: [ docker, release ]
     if: needs.release.outputs.version != ''
@@ -236,12 +236,46 @@ jobs:
       deployments: write
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-      url: ${{ steps.create_config.outputs.docs_url }}
+      url: ${{ steps.deploy.outputs.service_url }}
     steps:
+      - name: Deploy to Render
+        id: deploy
+        uses: johnbeynon/render-deploy-action@v0.0.8
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+
+      - name: Update service image
+        run: |
+          curl -X PATCH \
+          -H "Accept: application/json" \
+          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}" \
+          -d '{
+            "imageTag": "${{ needs.release.outputs.channel }}"
+          }'
+
+      - name: Set environment variables
+        run: |
+          curl -X PATCH \
+          -H "Accept: application/json" \
+          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+          -H "Content-Type: application/json" \
+          "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/env-vars" \
+          -d '{
+            "envVars": [
+              {
+                "key": "ASPNETCORE_ENVIRONMENT",
+                "value": "${{ github.ref == 'refs/heads/main' && 'Production' || 'Development' }}"
+              }
+            ]
+          }'
+
       - name: Create Deployment Config
         id: create_config
         run: |
-          # Ustaw URL dokumentacji
+          # Set documentation URL
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             DOCS_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
           else
