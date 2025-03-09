@@ -8,6 +8,12 @@ on:
       - '.gitignore'
       - '.editorconfig'
       - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: false
+        default: 'Manual deployment'
 
 permissions:
   contents: write
@@ -35,6 +41,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Display manual trigger reason
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "::notice title=Manual Trigger::Workflow triggered manually with reason: ${{ github.event.inputs.reason || 'No reason provided' }}"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
