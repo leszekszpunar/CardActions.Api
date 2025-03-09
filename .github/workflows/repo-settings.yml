@@ -55,21 +55,21 @@ jobs:
             const issueBody = `
             ## Branch Protection Settings Reminder
             
-            Please make sure the following branch protection settings are enabled for main and develop branches:
+            Zalecane ustawienia zabezpieczeń dla gałęzi głównych (main, develop):
 
-            ### Required settings:
+            ### Zalecane ustawienia dla indywidualnego dewelopera:
             - ✅ Require pull request reviews before merging
-              - At least 1 approval required
+              - At least 1 approval required 
               - Dismiss stale pull request approvals when new commits are pushed
-              - Require review from Code Owners
+              - ⚠️ **NIE WŁĄCZAJ** "Require review from Code Owners", ponieważ bez innych współpracowników zablokujesz sam siebie!
             - ✅ Require status checks to pass before merging
               - Require branches to be up to date before merging
               - Required status check: build
             
-            These settings can only be configured by a repository admin through GitHub's UI:
+            Te ustawienia są dostępne w:
             **Settings > Branches > Branch protection rules**
             
-            This is an automated reminder created on: ${new Date().toISOString()}.
+            To przypomnienie utworzono: ${new Date().toISOString()}.
             `;
             
             // Check for existing issue
