@@ -1,3 +1,5 @@
+# [1.1.0-develop.5](https://github.com/leszekszpunar/CardActions.Api/compare/v1.1.0-develop.4...v1.1.0-develop.5) (2025-03-09)
+
 # [1.1.0](https://github.com/leszekszpunar/CardActions.Api/compare/v1.0.0...v1.1.0) (2025-03-04)
 
 
@@ -73,5 +75,3 @@
 * **CardActions:** Initial project setup ([#1](https://github.com/leszekszpunar/CardActions.Api/issues/1)) ([#2](https://github.com/leszekszpunar/CardActions.Api/issues/2)) ([53d6e07](https://github.com/leszekszpunar/CardActions.Api/commit/53d6e0717eed3217c502f63f943a56595664e093)), closes [#3](https://github.com/leszekszpunar/CardActions.Api/issues/3)
 * **CI/CD:** Enhance workflows and add GitHub Pages deployment ([#5](https://github.com/leszekszpunar/CardActions.Api/issues/5)) ([59aa80a](https://github.com/leszekszpunar/CardActions.Api/commit/59aa80ae4082fd1acfd7e735eeced878795d661a))
 * **CI/CD:** Refactor workflows for improved deployment and version handling ([#6](https://github.com/leszekszpunar/CardActions.Api/issues/6)) ([3c7fd7c](https://github.com/leszekszpunar/CardActions.Api/commit/3c7fd7c8515dc2fa4c91e8c594ed25417152bb29))
-
-refactor: Update CI/CD workflow to include README.md in publish directory and set documentation label
