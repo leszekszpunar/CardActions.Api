@@ -7,18 +7,17 @@ namespace CardActions.Domain.Policies;
 ///     Implementacja polityki określającej, które akcje są dozwolone dla danej karty.
 ///     Proces biznesowy:
 ///     1. Weryfikacja podstawowa
-///        - Sprawdza czy nazwa akcji nie jest pusta
-///        - Jeśli jest pusta, akcja jest niedozwolona
+///     - Sprawdza czy nazwa akcji nie jest pusta
+///     - Jeśli jest pusta, akcja jest niedozwolona
 ///     2. Dopasowanie reguł
-///        - Znajduje reguły pasujące do typu i statusu karty
-///        - Jeśli nie ma pasujących reguł, akcja jest niedozwolona
+///     - Znajduje reguły pasujące do typu i statusu karty
+///     - Jeśli nie ma pasujących reguł, akcja jest niedozwolona
 ///     3. Sprawdzenie PIN-u
-///        - Weryfikuje czy wymagania dotyczące PIN-u są spełnione
-///        - Jeśli wymagania nie są spełnione, akcja jest niedozwolona
+///     - Weryfikuje czy wymagania dotyczące PIN-u są spełnione
+///     - Jeśli wymagania nie są spełnione, akcja jest niedozwolona
 ///     4. Końcowa weryfikacja
-///        - Sprawdza czy wszystkie znalezione reguły zezwalają na akcję
-///        - Jeśli którakolwiek reguła zabrania, akcja jest niedozwolona
-///     
+///     - Sprawdza czy wszystkie znalezione reguły zezwalają na akcję
+///     - Jeśli którakolwiek reguła zabrania, akcja jest niedozwolona
 ///     Wzorce projektowe:
 ///     - Policy Pattern: Ta klasa jest przykładem wzorca Policy, gdzie reguły biznesowe są
 ///     enkapsulowane w osobnej klasie. Dzięki temu reguły można łatwo modyfikować i testować
@@ -27,7 +26,6 @@ namespace CardActions.Domain.Policies;
 ///     pozwalając na łatwą podmianę w przyszłości (np. inna implementacja ICardActionPolicy).
 ///     - Dependency Injection: Zależność od reguł jest wstrzykiwana przez konstruktor,
 ///     co ułatwia testowanie i zwiększa elastyczność.
-///     
 ///     Zalety:
 ///     - Odseparowanie reguł biznesowych od innych warstw aplikacji
 ///     - Jednolite miejsce do definiowania i egzekwowania polityk

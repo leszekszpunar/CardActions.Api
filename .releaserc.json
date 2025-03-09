@@ -8,8 +8,8 @@
       "name": "main",
       "channel": "latest"
     },
-    { 
-      "name": "develop", 
+    {
+      "name": "develop",
       "prerelease": "develop",
       "channel": "beta"
     }
@@ -33,7 +33,10 @@
     [
       "@semantic-release/git",
       {
-        "assets": ["${process.env.GITHUB_REF_NAME === 'main' ? 'CHANGELOG.md' : 'CHANGELOG-develop.md'}", "VERSION"],
+        "assets": [
+          "${process.env.GITHUB_REF_NAME === 'main' ? 'CHANGELOG.md' : 'CHANGELOG-develop.md'}",
+          "VERSION"
+        ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],

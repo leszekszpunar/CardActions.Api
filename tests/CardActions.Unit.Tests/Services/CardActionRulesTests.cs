@@ -17,22 +17,22 @@ namespace CardActions.Unit.Tests.Services;
 public class CardActionRulesTests
 {
     private readonly ICardActionPolicy _policy;
+    private readonly IReadOnlyCollection<CardActionRule> _rules;
     private readonly ICardActionService _service;
     private readonly ITestOutputHelper _testOutputHelper;
-    private readonly IReadOnlyCollection<CardActionRule> _rules;
 
     public CardActionRulesTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        
+
         // Wczytanie reguł z pliku CSV
         var csvPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
             "../../../../../src/CardActions.Api/Resources/Allowed_Actions_Table.csv"));
-        
+
         var logger = new Mock<ILogger<CsvCardActionRulesLoader>>().Object;
         var loader = new CsvCardActionRulesLoader(csvPath, logger);
         _rules = loader.LoadRules();
-        
+
         _policy = new CardActionPolicy(_rules);
 
         var allActionNames = _rules
@@ -54,12 +54,12 @@ public class CardActionRulesTests
     {
         // Arrange
         var expectedResult = IsActionAllowedInCsv(actionName, cardType, cardStatus, isPinSet);
-        
+
         // Act
         var result = _policy.IsActionAllowed(actionName, cardType, cardStatus, isPinSet);
 
         // Assert
-        result.ShouldBe(expectedResult, 
+        result.ShouldBe(expectedResult,
             $"Akcja {actionName} dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet} powinna być {(expectedResult ? "dozwolona" : "niedozwolona")}");
     }
 
@@ -74,7 +74,7 @@ public class CardActionRulesTests
     {
         // Arrange
         var expectedResult = IsActionAllowedInCsv(actionName, cardType, cardStatus, isPinSet);
-        
+
         // Act
         var result = _policy.IsActionAllowed(actionName, cardType, cardStatus, isPinSet);
 
@@ -150,7 +150,7 @@ public class CardActionRulesTests
     {
         // Arrange
         var expectedResult = IsActionAllowedInCsv(actionName, cardType, cardStatus, isPinSet);
-        
+
         // Act
         var result = _policy.IsActionAllowed(actionName, cardType, cardStatus, isPinSet);
 
@@ -170,7 +170,7 @@ public class CardActionRulesTests
     {
         // Arrange
         var expectedResult = IsActionAllowedInCsv(actionName, cardType, cardStatus, isPinSet);
-        
+
         // Act
         var result = _policy.IsActionAllowed(actionName, cardType, cardStatus, isPinSet);
 
@@ -306,11 +306,11 @@ public class CardActionRulesTests
         var cardType = CardType.Debit;
         var cardStatus = CardStatus.Active;
         var isPinSet = true;
-        
+
         var expectedActions = _rules
-            .Where(r => r.CardType == cardType && 
-                        r.CardStatus == cardStatus && 
-                        r.IsAllowed && 
+            .Where(r => r.CardType == cardType &&
+                        r.CardStatus == cardStatus &&
+                        r.IsAllowed &&
                         (!r.RequiresPinSet.HasValue || r.RequiresPinSet.Value == isPinSet))
             .Select(r => r.ActionName)
             .Distinct()
@@ -323,7 +323,7 @@ public class CardActionRulesTests
         result.Count.ShouldBe(expectedActions.Count);
         var resultNames = result.Select(a => a.Name).ToList();
         foreach (var expectedAction in expectedActions) resultNames.ShouldContain(expectedAction);
-        
+
         // Wyświetlenie wszystkich dozwolonych akcji dla lepszej przejrzystości
         _testOutputHelper.WriteLine($"Dozwolone akcje dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet}:");
         foreach (var action in result) _testOutputHelper.WriteLine($"- {action.Name}");
@@ -336,11 +336,11 @@ public class CardActionRulesTests
         var cardType = CardType.Credit;
         var cardStatus = CardStatus.Blocked;
         var isPinSet = true;
-        
+
         var expectedActions = _rules
-            .Where(r => r.CardType == cardType && 
-                        r.CardStatus == cardStatus && 
-                        r.IsAllowed && 
+            .Where(r => r.CardType == cardType &&
+                        r.CardStatus == cardStatus &&
+                        r.IsAllowed &&
                         (!r.RequiresPinSet.HasValue || r.RequiresPinSet.Value == isPinSet))
             .Select(r => r.ActionName)
             .Distinct()
@@ -353,7 +353,7 @@ public class CardActionRulesTests
         result.Count.ShouldBe(expectedActions.Count);
         var resultNames = result.Select(a => a.Name).ToList();
         foreach (var expectedAction in expectedActions) resultNames.ShouldContain(expectedAction);
-        
+
         // Wyświetlenie wszystkich dozwolonych akcji dla lepszej przejrzystości
         _testOutputHelper.WriteLine($"Dozwolone akcje dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet}:");
         foreach (var action in result) _testOutputHelper.WriteLine($"- {action.Name}");
@@ -366,11 +366,11 @@ public class CardActionRulesTests
         var cardType = CardType.Prepaid;
         var cardStatus = CardStatus.Closed;
         var isPinSet = true;
-        
+
         var expectedActions = _rules
-            .Where(r => r.CardType == cardType && 
-                        r.CardStatus == cardStatus && 
-                        r.IsAllowed && 
+            .Where(r => r.CardType == cardType &&
+                        r.CardStatus == cardStatus &&
+                        r.IsAllowed &&
                         (!r.RequiresPinSet.HasValue || r.RequiresPinSet.Value == isPinSet))
             .Select(r => r.ActionName)
             .Distinct()
@@ -383,7 +383,7 @@ public class CardActionRulesTests
         result.Count.ShouldBe(expectedActions.Count);
         var resultNames = result.Select(a => a.Name).ToList();
         foreach (var expectedAction in expectedActions) resultNames.ShouldContain(expectedAction);
-        
+
         // Wyświetlenie wszystkich dozwolonych akcji dla lepszej przejrzystości
         _testOutputHelper.WriteLine($"Dozwolone akcje dla karty {cardType} w statusie {cardStatus} z PIN={isPinSet}:");
         foreach (var action in result) _testOutputHelper.WriteLine($"- {action.Name}");
@@ -473,7 +473,7 @@ public class CardActionRulesTests
     }
 
     /// <summary>
-    /// Sprawdza, czy akcja jest dozwolona na podstawie reguł wczytanych z pliku CSV.
+    ///     Sprawdza, czy akcja jest dozwolona na podstawie reguł wczytanych z pliku CSV.
     /// </summary>
     private bool IsActionAllowedInCsv(string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet)
     {
@@ -482,20 +482,20 @@ public class CardActionRulesTests
                         r.CardType == cardType &&
                         r.CardStatus == cardStatus)
             .ToList();
-            
+
         if (!matchingRules.Any())
             return false;
-            
+
         var pinMatchingRules = matchingRules
             .Where(r => !r.RequiresPinSet.HasValue || r.RequiresPinSet.Value == isPinSet)
             .ToList();
-            
+
         if (!pinMatchingRules.Any())
             return false;
-            
+
         if (pinMatchingRules.Any(r => !r.IsAllowed))
             return false;
-            
+
         return true;
     }
 }
