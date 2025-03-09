@@ -1,40 +1,40 @@
+using CardActions.Application.Services;
 using CardActions.Domain;
+using CardActions.Domain.Policies;
+using CardActions.Domain.Policies.Interfaces;
+using CardActions.Domain.Services;
+using CardActions.Domain.Services.Interfaces;
+using CardActions.Infrastructure.Services;
+using CardActions.Infrastructure.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
-using CardActions.Application.Services;
-using CardActions.Domain.Policies;
-using CardActions.Domain.Services;
-using CardActions.Infrastructure.Services;
-using Microsoft.AspNetCore.Http;
 
 namespace CardActions.Infrastructure;
 
 /// <summary>
-/// Klasa rozszerzająca konfigurację dla warstwy infrastruktury.
-/// 
-/// Architektura projektu opiera się na zasadach Domain-Driven Design (DDD) z wyraźnym podziałem na warstwy:
-/// - Domain - zawiera modele domenowe, polityki i podstawowe reguły biznesowe
-/// - Application - zawiera przypadki użycia i logikę aplikacji
-/// - Infrastructure - zawiera implementacje techniczne interfejsów zdefiniowanych w wyższych warstwach
-/// - API - warstwa prezentacji (kontrolery)
-///
-/// Projekt wykorzystuje następujące wzorce projektowe:
-/// - Dependency Injection (DI) - wstrzykiwanie zależności przez konstruktor
-/// - Repository Pattern - oddzielenie logiki dostępu do danych od logiki biznesowej
-/// - Strategy Pattern - różne strategie określania dozwolonych akcji
-/// - Policy Pattern - enkapsulacja reguł biznesowych w osobnych klasach
-/// - Value Object - niemutowalne obiekty wartościowe
-/// - Factory Method - fabryki do tworzenia obiektów
-///
-/// Jakość kodu zapewniają:
-/// - Zasady SOLID
-/// - Obsługa błędów i walidacja danych wejściowych
-/// - Niemutowalność obiektów (immutability)
-/// - Interfejsy dla kluczowych komponentów
-/// - System regułowy oparty na konfiguracji
+///     Klasa rozszerzająca konfigurację dla warstwy infrastruktury.
+///     Architektura projektu opiera się na zasadach Domain-Driven Design (DDD) z wyraźnym podziałem na warstwy:
+///     - Domain - zawiera modele domenowe, polityki i podstawowe reguły biznesowe
+///     - Application - zawiera przypadki użycia i logikę aplikacji
+///     - Infrastructure - zawiera implementacje techniczne interfejsów zdefiniowanych w wyższych warstwach
+///     - API - warstwa prezentacji (kontrolery)
+///     Projekt wykorzystuje następujące wzorce projektowe:
+///     - Dependency Injection (DI) - wstrzykiwanie zależności przez konstruktor
+///     - Repository Pattern - oddzielenie logiki dostępu do danych od logiki biznesowej
+///     - Strategy Pattern - różne strategie określania dozwolonych akcji
+///     - Policy Pattern - enkapsulacja reguł biznesowych w osobnych klasach
+///     - Value Object - niemutowalne obiekty wartościowe
+///     - Factory Method - fabryki do tworzenia obiektów
+///     Jakość kodu zapewniają:
+///     - Zasady SOLID
+///     - Obsługa błędów i walidacja danych wejściowych
+///     - Niemutowalność obiektów (immutability)
+///     - Interfejsy dla kluczowych komponentów
+///     - System regułowy oparty na konfiguracji
 /// </summary>
 public static class DependencyInjection
 {
@@ -51,21 +51,29 @@ public static class DependencyInjection
 
         // Add domain services
         services.AddDomain();
-        
+
         // Rejestracja inicjalizatora infrastruktury
 
         // Rejestracja serwisów
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-        
-        // Rejestracja dostawcy reguł akcji (tylko CSV)
+
+        // Rejestracja loadera reguł akcji karty
+        services.AddSingleton<ICardActionRulesLoader>(provider =>
+        {
+            var logger = provider.GetRequiredService<ILogger<CsvCardActionRulesLoader>>();
+            var csvPath = configuration["CardActionRulesPath"] ??
+                          Path.Combine(AppContext.BaseDirectory, "Resources", "Allowed_Actions_Table.csv");
+            return new CsvCardActionRulesLoader(csvPath, logger);
+        });
+
+        // Rejestracja dostawcy reguł akcji
         services.AddSingleton<ICardActionRulesProvider>(provider =>
         {
             var logger = provider.GetRequiredService<ILogger<CardActionRulesProvider>>();
-            var csvPath = configuration["CardActionRulesPath"] ?? 
-                Path.Combine(AppContext.BaseDirectory, "Resources", "Allowed_Actions_Table.csv");
-            return new CardActionRulesProvider(csvPath, logger);
+            var rulesLoader = provider.GetRequiredService<ICardActionRulesLoader>();
+            return new CardActionRulesProvider(rulesLoader, logger);
         });
-            
+
         services.AddScoped<ICardService, CardService>();
 
         // Rejestracja polityk domenowych
@@ -156,7 +164,7 @@ public static class DependencyInjection
         try
         {
             // Inicjalizacja infrastruktury
-            
+
             logger.LogInformation("Infrastructure initialization completed");
         }
         catch (Exception ex)

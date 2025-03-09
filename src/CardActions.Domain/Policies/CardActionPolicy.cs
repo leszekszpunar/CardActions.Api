@@ -1,39 +1,34 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using CardActions.Domain.Models;
-using CardActions.Domain.Services;
+using CardActions.Domain.Policies.Interfaces;
 
 namespace CardActions.Domain.Policies;
 
 /// <summary>
-/// Implementacja polityki określającej, które akcje są dozwolone dla danej karty.
-/// Klasa ta implementuje wzorzec Policy z DDD i odpowiada za egzekwowanie reguł biznesowych
-/// dotyczących dozwolonych akcji dla kart o określonych parametrach.
-/// 
-/// Wzorce projektowe:
-/// - Policy Pattern: Ta klasa jest przykładem wzorca Policy, gdzie reguły biznesowe są
-///   enkapsulowane w osobnej klasie. Dzięki temu reguły można łatwo modyfikować i testować
-///   niezależnie od reszty kodu.
-/// - Strategy Pattern: Polityka działa jako strategia określania dozwolonych akcji,
-///   pozwalając na łatwą podmianę w przyszłości (np. inna implementacja ICardActionPolicy).
-/// - Dependency Injection: Zależność od reguł jest wstrzykiwana przez konstruktor,
-///   co ułatwia testowanie i zwiększa elastyczność.
-/// 
-/// Zalety:
-/// - Odseparowanie reguł biznesowych od innych warstw aplikacji
-/// - Jednolite miejsce do definiowania i egzekwowania polityk
-/// - Możliwość łatwej zmiany polityki w przyszłości
+///     Implementacja polityki określającej, które akcje są dozwolone dla danej karty.
+///     Klasa ta implementuje wzorzec Policy z DDD i odpowiada za egzekwowanie reguł biznesowych
+///     dotyczących dozwolonych akcji dla kart o określonych parametrach.
+///     Wzorce projektowe:
+///     - Policy Pattern: Ta klasa jest przykładem wzorca Policy, gdzie reguły biznesowe są
+///     enkapsulowane w osobnej klasie. Dzięki temu reguły można łatwo modyfikować i testować
+///     niezależnie od reszty kodu.
+///     - Strategy Pattern: Polityka działa jako strategia określania dozwolonych akcji,
+///     pozwalając na łatwą podmianę w przyszłości (np. inna implementacja ICardActionPolicy).
+///     - Dependency Injection: Zależność od reguł jest wstrzykiwana przez konstruktor,
+///     co ułatwia testowanie i zwiększa elastyczność.
+///     Zalety:
+///     - Odseparowanie reguł biznesowych od innych warstw aplikacji
+///     - Jednolite miejsce do definiowania i egzekwowania polityk
+///     - Możliwość łatwej zmiany polityki w przyszłości
 /// </summary>
 public class CardActionPolicy : ICardActionPolicy
 {
     /// <summary>
-    /// Kolekcja reguł używanych do określenia, które akcje są dozwolone.
+    ///     Kolekcja reguł używanych do określenia, które akcje są dozwolone.
     /// </summary>
     private readonly IReadOnlyCollection<CardActionRule> _rules;
 
     /// <summary>
-    /// Inicjalizuje nową instancję klasy <see cref="CardActionPolicy"/>.
+    ///     Inicjalizuje nową instancję klasy <see cref="CardActionPolicy" />.
     /// </summary>
     /// <param name="rules">Kolekcja reguł używanych do określenia, które akcje są dozwolone</param>
     /// <exception cref="ArgumentNullException">Rzucany, gdy rules jest null</exception>
@@ -43,7 +38,7 @@ public class CardActionPolicy : ICardActionPolicy
     }
 
     /// <summary>
-    /// Sprawdza, czy dana akcja jest dozwolona dla karty o określonych parametrach.
+    ///     Sprawdza, czy dana akcja jest dozwolona dla karty o określonych parametrach.
     /// </summary>
     /// <param name="actionName">Nazwa akcji do sprawdzenia</param>
     /// <param name="cardType">Typ karty</param>
@@ -59,8 +54,8 @@ public class CardActionPolicy : ICardActionPolicy
         // Znajdź reguły pasujące do podanych parametrów
         var matchingRules = _rules
             .Where(r => r.ActionName.Equals(actionName, StringComparison.OrdinalIgnoreCase) &&
-                   r.CardType == cardType &&
-                   r.CardStatus == cardStatus)
+                        r.CardType == cardType &&
+                        r.CardStatus == cardStatus)
             .ToList();
 
         // Jeśli nie ma pasujących reguł, akcja jest niedozwolona
@@ -84,67 +79,3 @@ public class CardActionPolicy : ICardActionPolicy
         return true;
     }
 }
-
-/// <summary>
-/// Reprezentuje regułę określającą, czy dana akcja jest dozwolona dla określonego typu i statusu karty.
-/// Implementuje wzorzec Value Object z DDD.
-/// 
-/// Wzorce projektowe:
-/// - Value Object: Ta klasa jest niemodyfikowalna po utworzeniu, a jej tożsamość jest określona
-///   przez wartości jej właściwości, a nie przez identyfikator.
-/// - Immutability: Wszystkie właściwości są tylko do odczytu, co zapobiega niepożądanym modyfikacjom
-///   i zwiększa bezpieczeństwo w środowisku wielowątkowym.
-/// 
-/// Zalety:
-/// - Enkapsulacja reguły jako samodzielnego obiektu biznesowego
-/// - Możliwość łatwego testowania każdej reguły osobno
-/// - Niemutowalność zapobiega przypadkowym zmianom stanu
-/// </summary>
-public class CardActionRule
-{
-    /// <summary>
-    /// Nazwa akcji, której dotyczy reguła.
-    /// </summary>
-    public string ActionName { get; }
-
-    /// <summary>
-    /// Typ karty, dla którego obowiązuje reguła.
-    /// </summary>
-    public CardType CardType { get; }
-
-    /// <summary>
-    /// Status karty, dla którego obowiązuje reguła.
-    /// </summary>
-    public CardStatus CardStatus { get; }
-
-    /// <summary>
-    /// Określa, czy akcja jest dozwolona dla podanego typu i statusu karty.
-    /// </summary>
-    public bool IsAllowed { get; }
-
-    /// <summary>
-    /// Określa, czy akcja wymaga ustawionego PIN-u.
-    /// Null oznacza, że akcja nie zależy od ustawienia PIN-u.
-    /// True oznacza, że akcja wymaga ustawionego PIN-u.
-    /// False oznacza, że akcja wymaga nieustawionego PIN-u.
-    /// </summary>
-    public bool? RequiresPinSet { get; }
-
-    /// <summary>
-    /// Inicjalizuje nową instancję klasy <see cref="CardActionRule"/>.
-    /// </summary>
-    /// <param name="actionName">Nazwa akcji</param>
-    /// <param name="cardType">Typ karty</param>
-    /// <param name="cardStatus">Status karty</param>
-    /// <param name="isAllowed">Czy akcja jest dozwolona</param>
-    /// <param name="requiresPinSet">Czy akcja wymaga ustawionego PIN-u</param>
-    /// <exception cref="ArgumentNullException">Rzucany, gdy actionName jest null</exception>
-    public CardActionRule(string actionName, CardType cardType, CardStatus cardStatus, bool isAllowed, bool? requiresPinSet = null)
-    {
-        ActionName = actionName ?? throw new ArgumentNullException(nameof(actionName));
-        CardType = cardType;
-        CardStatus = cardStatus;
-        IsAllowed = isAllowed;
-        RequiresPinSet = requiresPinSet;
-    }
-} 

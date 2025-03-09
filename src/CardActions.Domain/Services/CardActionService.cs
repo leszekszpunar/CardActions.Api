@@ -1,48 +1,43 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using CardActions.Domain.Models;
-using CardActions.Domain.Policies;
+using CardActions.Domain.Policies.Interfaces;
+using CardActions.Domain.Services.Interfaces;
 
 namespace CardActions.Domain.Services;
 
 /// <summary>
-/// Serwis domenowy dostarczający funkcjonalności związane z akcjami karty.
-/// Klasa ta odpowiada za pobieranie dozwolonych akcji dla karty o określonych parametrach.
-/// 
-/// Wzorce projektowe:
-/// - Service Layer: Ta klasa implementuje wzorzec Service Layer, działając jako
-///   fasada dla operacji domenowych związanych z akcjami karty.
-/// - Strategy Pattern: Serwis korzysta z polityki jako strategii do określania,
-///   które akcje są dozwolone, co umożliwia łatwą zmianę zachowania.
-/// - Dependency Injection: Zależności od polityki i listy wszystkich akcji są wstrzykiwane
-///   przez konstruktor, co zwiększa elastyczność i ułatwia testowanie.
-/// 
-/// SOLID:
-/// - Single Responsibility Principle: Klasa ma jedno zadanie - dostarczanie akcji karty
-/// - Open/Closed Principle: Można rozszerzyć zachowanie serwisu bez modyfikacji jego kodu
-///   poprzez dostarczenie innej implementacji ICardActionPolicy
-/// - Dependency Inversion: Serwis zależy od abstrakcji (interfejsów), a nie od konkretnych implementacji
-/// 
-/// Zalety:
-/// - Prosty interfejs dla klientów
-/// - Możliwość wymiany polityki bez zmiany serwisu
-/// - Łatwość testowania dzięki wstrzykiwaniu zależności
+///     Serwis domenowy dostarczający funkcjonalności związane z akcjami karty.
+///     Klasa ta odpowiada za pobieranie dozwolonych akcji dla karty o określonych parametrach.
+///     Wzorce projektowe:
+///     - Service Layer: Ta klasa implementuje wzorzec Service Layer, działając jako
+///     fasada dla operacji domenowych związanych z akcjami karty.
+///     - Strategy Pattern: Serwis korzysta z polityki jako strategii do określania,
+///     które akcje są dozwolone, co umożliwia łatwą zmianę zachowania.
+///     - Dependency Injection: Zależności od polityki i listy wszystkich akcji są wstrzykiwane
+///     przez konstruktor, co zwiększa elastyczność i ułatwia testowanie.
+///     SOLID:
+///     - Single Responsibility Principle: Klasa ma jedno zadanie - dostarczanie akcji karty
+///     - Open/Closed Principle: Można rozszerzyć zachowanie serwisu bez modyfikacji jego kodu
+///     poprzez dostarczenie innej implementacji ICardActionPolicy
+///     - Dependency Inversion: Serwis zależy od abstrakcji (interfejsów), a nie od konkretnych implementacji
+///     Zalety:
+///     - Prosty interfejs dla klientów
+///     - Możliwość wymiany polityki bez zmiany serwisu
+///     - Łatwość testowania dzięki wstrzykiwaniu zależności
 /// </summary>
 public class CardActionService : ICardActionService
 {
     /// <summary>
-    /// Polityka określająca, które akcje są dozwolone dla danej karty.
-    /// </summary>
-    private readonly ICardActionPolicy _policy;
-
-    /// <summary>
-    /// Lista wszystkich dostępnych nazw akcji.
+    ///     Lista wszystkich dostępnych nazw akcji.
     /// </summary>
     private readonly IReadOnlyList<string> _allActionNames;
 
     /// <summary>
-    /// Inicjalizuje nową instancję klasy <see cref="CardActionService"/>.
+    ///     Polityka określająca, które akcje są dozwolone dla danej karty.
+    /// </summary>
+    private readonly ICardActionPolicy _policy;
+
+    /// <summary>
+    ///     Inicjalizuje nową instancję klasy <see cref="CardActionService" />.
     /// </summary>
     /// <param name="policy">Polityka określająca, które akcje są dozwolone</param>
     /// <param name="allActionNames">Lista wszystkich dostępnych nazw akcji</param>
@@ -54,7 +49,7 @@ public class CardActionService : ICardActionService
     }
 
     /// <summary>
-    /// Pobiera listę wszystkich dostępnych akcji dla karty.
+    ///     Pobiera listę wszystkich dostępnych akcji dla karty.
     /// </summary>
     /// <returns>Lista wszystkich możliwych akcji</returns>
     public IReadOnlyList<CardAction> GetAllActions()
@@ -65,7 +60,7 @@ public class CardActionService : ICardActionService
     }
 
     /// <summary>
-    /// Pobiera listę dozwolonych akcji dla karty o określonych parametrach.
+    ///     Pobiera listę dozwolonych akcji dla karty o określonych parametrach.
     /// </summary>
     /// <param name="cardType">Typ karty</param>
     /// <param name="cardStatus">Status karty</param>
@@ -78,4 +73,4 @@ public class CardActionService : ICardActionService
             .Select(CardAction.Create)
             .ToList();
     }
-} 
+}

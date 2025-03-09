@@ -1,7 +1,8 @@
-using NetArchTest.Rules;
-using Xunit;
-using Xunit.Abstractions;
+using System.Runtime.CompilerServices;
 using CardActions.Architecture.Tests.Helpers;
+using MediatR;
+using NetArchTest.Rules;
+using Xunit.Abstractions;
 
 namespace CardActions.Architecture.Tests;
 
@@ -33,7 +34,8 @@ public class CleanArchitectureTests
 
         // Assert
         var failingTypeNames = result.FailingTypeNames ?? Array.Empty<string>();
-        Assert.True(result.IsSuccessful, $"Domain should not have dependencies on other layers: {string.Join(", ", failingTypeNames)}");
+        Assert.True(result.IsSuccessful,
+            $"Domain should not have dependencies on other layers: {string.Join(", ", failingTypeNames)}");
     }
 
     [Fact]
@@ -54,7 +56,8 @@ public class CleanArchitectureTests
 
         // Assert
         var failingTypeNames = result.FailingTypeNames ?? Array.Empty<string>();
-        Assert.True(result.IsSuccessful, $"Application should only have dependency on Domain: {string.Join(", ", failingTypeNames)}");
+        Assert.True(result.IsSuccessful,
+            $"Application should only have dependency on Domain: {string.Join(", ", failingTypeNames)}");
     }
 
     [Fact]
@@ -78,19 +81,16 @@ public class CleanArchitectureTests
             foreach (var property in properties)
             {
                 var setter = property.GetSetMethod();
-                if (setter != null && setter.IsPublic && !setter.ReturnParameter.GetRequiredCustomModifiers().Contains(typeof(System.Runtime.CompilerServices.IsExternalInit)))
-                {
+                if (setter != null && setter.IsPublic && !setter.ReturnParameter.GetRequiredCustomModifiers()
+                        .Contains(typeof(IsExternalInit)))
                     entitiesWithPublicSetters.Add($"{entity.Name}.{property.Name}");
-                }
             }
         }
 
         // Assert
-        _output.WriteLine($"Znaleziono {entitiesWithPublicSetters.Count} właściwości z publicznymi setterami w encjach:");
-        foreach (var entityProperty in entitiesWithPublicSetters)
-        {
-            _output.WriteLine($"- {entityProperty}");
-        }
+        _output.WriteLine(
+            $"Znaleziono {entitiesWithPublicSetters.Count} właściwości z publicznymi setterami w encjach:");
+        foreach (var entityProperty in entitiesWithPublicSetters) _output.WriteLine($"- {entityProperty}");
 
         Assert.Empty(entitiesWithPublicSetters);
     }
@@ -105,9 +105,9 @@ public class CleanArchitectureTests
         var commands = Types
             .InAssembly(assembly)
             .That()
-            .ImplementInterface(typeof(MediatR.IRequest<>))
+            .ImplementInterface(typeof(IRequest<>))
             .Or()
-            .ImplementInterface(typeof(MediatR.IRequest))
+            .ImplementInterface(typeof(IRequest))
             .And()
             .HaveNameEndingWith("Command")
             .GetTypes();
@@ -120,20 +120,15 @@ public class CleanArchitectureTests
             foreach (var property in properties)
             {
                 var setter = property.GetSetMethod();
-                if (setter != null && setter.IsPublic && !setter.ReturnParameter.GetRequiredCustomModifiers().Contains(typeof(System.Runtime.CompilerServices.IsExternalInit)))
-                {
-                    mutableCommands.Add($"{command.Name}.{property.Name}");
-                }
+                if (setter != null && setter.IsPublic && !setter.ReturnParameter.GetRequiredCustomModifiers()
+                        .Contains(typeof(IsExternalInit))) mutableCommands.Add($"{command.Name}.{property.Name}");
             }
         }
 
         // Assert
         _output.WriteLine($"Znaleziono {mutableCommands.Count} właściwości z publicznymi setterami w komendach:");
-        foreach (var commandProperty in mutableCommands)
-        {
-            _output.WriteLine($"- {commandProperty}");
-        }
+        foreach (var commandProperty in mutableCommands) _output.WriteLine($"- {commandProperty}");
 
         Assert.Empty(mutableCommands);
     }
-} 
+}

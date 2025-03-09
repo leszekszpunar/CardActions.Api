@@ -1,8 +1,9 @@
-using NetArchTest.Rules;
 using System.Reflection;
-using Xunit;
-using Xunit.Abstractions;
+using System.Runtime.CompilerServices;
 using CardActions.Architecture.Tests.Helpers;
+using MediatR;
+using NetArchTest.Rules;
+using Xunit.Abstractions;
 
 namespace CardActions.Architecture.Tests;
 
@@ -36,10 +37,7 @@ public class AccessModifiersTests
 
         // Assert
         _output.WriteLine($"Found {nonReadOnlyValueObjects.Count} non-readonly value objects:");
-        foreach (var vo in nonReadOnlyValueObjects)
-        {
-            _output.WriteLine($"- {vo.FullName}");
-        }
+        foreach (var vo in nonReadOnlyValueObjects) _output.WriteLine($"- {vo.FullName}");
 
         Assert.Empty(nonReadOnlyValueObjects);
     }
@@ -68,11 +66,9 @@ public class AccessModifiersTests
             .ToList();
 
         // Assert
-        _output.WriteLine($"Found {publicImplementationClasses.Count} public implementation classes that should be internal:");
-        foreach (var cls in publicImplementationClasses)
-        {
-            _output.WriteLine($"- {cls.FullName}");
-        }
+        _output.WriteLine(
+            $"Found {publicImplementationClasses.Count} public implementation classes that should be internal:");
+        foreach (var cls in publicImplementationClasses) _output.WriteLine($"- {cls.FullName}");
 
         Assert.Empty(publicImplementationClasses);
     }
@@ -87,7 +83,7 @@ public class AccessModifiersTests
         var commandHandlers = Types
             .InAssembly(assembly)
             .That()
-            .ImplementInterface(typeof(MediatR.IRequestHandler<,>))
+            .ImplementInterface(typeof(IRequestHandler<,>))
             .And()
             .HaveNameEndingWith("Handler")
             .GetTypes();
@@ -98,10 +94,7 @@ public class AccessModifiersTests
 
         // Assert
         _output.WriteLine($"Found {publicCommandHandlers.Count} public command handlers that should be internal:");
-        foreach (var handler in publicCommandHandlers)
-        {
-            _output.WriteLine($"- {handler.FullName}");
-        }
+        foreach (var handler in publicCommandHandlers) _output.WriteLine($"- {handler.FullName}");
 
         Assert.Empty(publicCommandHandlers);
     }
@@ -125,10 +118,7 @@ public class AccessModifiersTests
 
         // Assert
         _output.WriteLine($"Found {nonPublicInterfaces.Count} non-public interfaces:");
-        foreach (var iface in nonPublicInterfaces)
-        {
-            _output.WriteLine($"- {iface.FullName}");
-        }
+        foreach (var iface in nonPublicInterfaces) _output.WriteLine($"- {iface.FullName}");
 
         Assert.Empty(nonPublicInterfaces);
     }
@@ -141,15 +131,16 @@ public class AccessModifiersTests
 
         // Check if all properties have only getters or init-only setters
         var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-        var allPropertiesReadOnly = properties.All(p => {
+        var allPropertiesReadOnly = properties.All(p =>
+        {
             var setMethod = p.GetSetMethod();
             if (setMethod == null) return true; // Only getter, so it's readonly
-            
+
             // Check if it's an init-only setter
             var modifiers = setMethod.ReturnParameter.GetRequiredCustomModifiers();
-            return modifiers.Contains(typeof(System.Runtime.CompilerServices.IsExternalInit));
+            return modifiers.Contains(typeof(IsExternalInit));
         });
 
         return allFieldsReadOnly && allPropertiesReadOnly;
     }
-} 
+}

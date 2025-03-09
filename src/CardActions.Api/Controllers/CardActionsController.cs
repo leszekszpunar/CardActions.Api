@@ -1,6 +1,4 @@
-
 using CardActions.Application.Features.CardActions.Queries.GetAllowedCardActions;
-using CardActions.Application.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -33,7 +31,7 @@ public class CardActionsController : ControllerBase
         _mediator = mediator;
         _validator = validator;
     }
-    
+
     /// <summary>
     ///     Pobiera dozwolone akcje dla karty użytkownika
     /// </summary>
@@ -56,12 +54,9 @@ public class CardActionsController : ControllerBase
         [FromRoute] string cardNumber)
     {
         var query = new GetAllowedCardActionsQuery(userId, cardNumber);
-        
+
         var validationResult = await _validator.ValidateAsync(query);
-        if (!validationResult.IsValid)
-        {
-            return BadRequest(new ValidationProblemDetails(validationResult.ToDictionary()));
-        }
+        if (!validationResult.IsValid) return BadRequest(new ValidationProblemDetails(validationResult.ToDictionary()));
 
         var result = await _mediator.Send(query);
         return Ok(result);

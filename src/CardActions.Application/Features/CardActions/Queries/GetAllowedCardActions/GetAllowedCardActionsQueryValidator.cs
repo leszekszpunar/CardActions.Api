@@ -1,11 +1,10 @@
 using CardActions.Application.Common.Interfaces;
 using FluentValidation;
-using CardActions.Application.Services;
 
 namespace CardActions.Application.Features.CardActions.Queries.GetAllowedCardActions;
 
 /// <summary>
-/// Walidator zapytania o dozwolone akcje dla karty.
+///     Walidator zapytania o dozwolone akcje dla karty.
 /// </summary>
 public class GetAllowedCardActionsQueryValidator : AbstractValidator<GetAllowedCardActionsQuery>
 {

@@ -1,18 +1,11 @@
-using System.Reflection;
-using System.Text.Json;
-using System.Threading.RateLimiting;
 using CardActions.Api.Extensions;
+using CardActions.Api.Middleware;
 using CardActions.Application;
 using CardActions.Infrastructure;
 using CardActions.Infrastructure.Data;
-using Microsoft.AspNetCore.Mvc;
-using NSwag;
-using Serilog;
-using System.Globalization;
-using CardActions.Api.Middleware;
-using Microsoft.AspNetCore.Localization;
-using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 var logger = Log.ForContext<Program>();
@@ -25,14 +18,14 @@ try
     builder.AddSerilogConfiguration();
     builder.Logging.AddLoggingConfiguration();
     builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
-    
+
     // Configure API
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
 
     // Configure memory cache
     builder.Services.AddMemoryCache();
-    
+
     // Register application layers
     builder.Services.AddApplication(builder.Configuration);
     builder.Services.AddInfrastructure(builder.Configuration);
@@ -44,8 +37,8 @@ try
         options.AddDefaultPolicy(policy =>
         {
             policy.AllowAnyOrigin()
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
+                .AllowAnyHeader()
+                .AllowAnyMethod();
         });
     });
 
@@ -53,7 +46,7 @@ try
     //builder.Services.AddApiConfiguration();
     builder.Services.AddRateLimitingConfiguration();
     builder.Services.AddSwaggerDocumentation(builder.Configuration);
-    
+
     // Configure health checks
     builder.Services.AddHealthChecks();
 
@@ -68,7 +61,7 @@ try
 
     // Configure API
     app.MapControllers();
-    
+
     // Configure middleware
     app.UseSwaggerDocumentation(builder.Configuration);
 
@@ -80,22 +73,22 @@ try
 
     // Obsługa błędów 404 i innych
     app.UseStatusCodePages();
-    
+
     // Configure metrics endpoint
     app.UseOpenTelemetryPrometheusScrapingEndpoint();
-    
+
     // Map health check endpoint
     app.MapHealthChecks("/health");
 
     // Redirect root to docs
     app.MapGet("/", () => Results.Redirect("/docs"))
-       .ExcludeFromDescription();
-    
+        .ExcludeFromDescription();
+
     app.Lifetime.ApplicationStarted.Register(() =>
     {
         var addresses = app.Services.GetService<IServer>()?.Features?.Get<IServerAddressesFeature>()?.Addresses;
         var baseUrl = addresses?.FirstOrDefault() ?? "http://localhost:8080";
-        
+
         logger.Information("CardActions.Api application started successfully");
         logger.Information("Base URL: {BaseUrl}", baseUrl);
         logger.Information("ReDoc documentation available at: {BaseUrl}/docs", baseUrl);
@@ -119,5 +112,7 @@ finally
 namespace CardActions.Api
 {
     // Class needed for integration tests
-    public class Program { }
+    public class Program
+    {
+    }
 }
