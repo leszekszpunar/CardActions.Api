@@ -1,0 +1,60 @@
+services:
+  # Produkcja - używa obrazu z tagiem latest
+  - type: web
+    name: cardactions-api-latest
+    runtime: image
+    image:
+      url: ghcr.io/leszekszpunar/cardactions-api:latest
+    region: frankfurt
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DOTNET_GCHeapHardLimit
+        value: 428MB      # Limit heap w .NET (512MB - ~80MB dla innych zasobów systemu)
+      - key: DOTNET_gcConcurrent
+        value: "true"     # Użyj współbieżnego GC
+      - key: DOTNET_gcServer 
+        value: "false"    # Wyłącz Server GC dla mniejszego zużycia pamięci
+      - key: ASPNETCORE_hostBuilder__reloadConfigOnChange
+        value: "false"    # Wyłącz automatyczne przeładowanie przy zmianie konfiguracji
+      - key: ASPNETCORE_Kestrel__Limits__MaxConcurrentConnections
+        value: "100"
+      - key: ASPNETCORE_Kestrel__Limits__MaxConcurrentUpgradedConnections
+        value: "50"
+      - key: ASPNETCORE_HEALTH_PATH
+        value: "/health"
+    autoDeploy: true
+    domains:
+      - cardactions-api-latest.onrender.com
+
+  # Development - używa obrazu z tagiem beta
+  - type: web
+    name: cardactions-api-beta
+    runtime: image
+    image:
+      url: ghcr.io/leszekszpunar/cardactions-api:beta
+    region: frankfurt
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Development
+      - key: DOTNET_GCHeapHardLimit
+        value: 428MB
+      - key: DOTNET_gcConcurrent
+        value: "true"
+      - key: DOTNET_gcServer 
+        value: "false"
+      - key: ASPNETCORE_hostBuilder__reloadConfigOnChange
+        value: "false"
+      - key: ASPNETCORE_Kestrel__Limits__MaxConcurrentConnections
+        value: "100"
+      - key: ASPNETCORE_Kestrel__Limits__MaxConcurrentUpgradedConnections
+        value: "50"
+      - key: ASPNETCORE_HEALTH_PATH
+        value: "/health"
+    autoDeploy: true
+    domains:
+      - cardactions-api-beta.onrender.com
