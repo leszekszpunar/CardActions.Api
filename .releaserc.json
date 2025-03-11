@@ -3,6 +3,7 @@
     "type": "git",
     "url": "https://github.com/leszekszpunar/CardActions.Api.git"
   },
+  "tagFormat": "v${version}",
   "branches": [
     {
       "name": "main",
