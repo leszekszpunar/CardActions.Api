@@ -92,7 +92,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "echo \"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\n<Project>\n    <PropertyGroup>\n        <Version>${nextRelease.version}</Version>\n    </PropertyGroup>\n</Project>\" > version.props && cat version.props"
+        "prepareCmd": "echo \"<?xml version=\\\"1.0\\\" encoding=\\\"utf-8\\\"?>\n<Project>\n    <PropertyGroup>\n        <!-- Wersja semantyczna -->\n        <Version>${nextRelease.version}</Version>\n        \n        <!-- Wersja informacyjna z hashiem commita -->\n        <InformationalVersion>${nextRelease.version}+${process.env.GITHUB_SHA || 'local'}</InformationalVersion>\n        \n        <!-- Wersja assembly (xx.yy.0.0 format) -->\n        <AssemblyVersion>${nextRelease.version.split('.')[0]}.${nextRelease.version.split('.')[1]}.0.0</AssemblyVersion>\n        \n        <!-- Pełna wersja pliku -->\n        <FileVersion>${nextRelease.version}</FileVersion>\n        \n        <!-- Hash commita -->\n        <SourceRevisionId>${process.env.GITHUB_SHA || 'local'}</SourceRevisionId>\n        \n        <!-- Data wydania -->\n        <BuildDate>$( new Date().toISOString() )</BuildDate>\n        \n        <!-- Kanał wydania -->\n        <ReleaseChannel>${process.env.GITHUB_REF_NAME === 'main' ? 'production' : 'development'}</ReleaseChannel>\n    </PropertyGroup>\n</Project>\" > version.props && cat version.props"
       }
     ],
     [
