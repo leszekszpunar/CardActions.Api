@@ -34,6 +34,7 @@ public static class SwaggerExtensions
 ## Linki
 - [Dokumentacja Swagger](/swagger)
 - [Stan API](/health)
+- [Szczegółowe informacje o wersji](/api/version)
 - [Dokumentacja ReDoc](/docs)
 
 ## Opis biznesowy
@@ -128,26 +129,52 @@ API umożliwia sprawdzenie dozwolonych akcji dla karty płatniczej na podstawie:
             
             // Najpierw spróbuj pobrać wersję z atrybutu informacyjnego
             var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            
+            // Pobierz metadane
+            var metadataAttributes = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().ToList();
+            var sourceRevision = "unknown";
+            var channel = "unknown";
+            
+            // Debug: dodaj informacje o środowisku
+            var environment = System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "nie ustawiono";
+            channel = string.IsNullOrEmpty(environment) ? "unknown" : 
+                     (environment.ToLower().Contains("prod") ? "production" : 
+                     (environment.ToLower().Contains("dev") || environment.ToLower() == "development" ? "development" : environment));
+            
+            // Pobierz wartości z metadanych
+            foreach (var attr in metadataAttributes)
+            {
+                if (attr.Key == "SourceRevisionId")
+                    sourceRevision = attr.Value;
+                else if (attr.Key == "ReleaseChannel")
+                    channel = attr.Value;
+            }
+            
+            // Utwórz rozszerzoną informację o wersji
             if (!string.IsNullOrEmpty(infoVersion))
             {
-                // Usuń suffiks z informationalVersion (np. +sha.xxx)
-                var plusIndex = infoVersion.IndexOf('+');
+                // Format: v1.2.3 (channel) | commit: abc1234
+                var baseVersion = infoVersion;
+                var plusIndex = baseVersion.IndexOf('+');
                 if (plusIndex > 0)
                 {
-                    infoVersion = infoVersion.Substring(0, plusIndex);
+                    // Wyciągnij hash commita z pełnej wersji informacyjnej
+                    sourceRevision = baseVersion[(plusIndex + 1)..];
+                    baseVersion = baseVersion.Substring(0, plusIndex);
                 }
-                return infoVersion;
+                
+                return $"v{baseVersion} ({channel}) | commit: {(string.IsNullOrEmpty(sourceRevision) ? "unknown" : sourceRevision[..Math.Min(7, sourceRevision.Length)])}";
             }
             
             // Następnie spróbuj pobrać wersję z atrybutu file version
             var fileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
             if (!string.IsNullOrEmpty(fileVersion))
             {
-                return fileVersion;
+                return $"v{fileVersion} ({channel}) | commit: {(string.IsNullOrEmpty(sourceRevision) ? "unknown" : sourceRevision[..Math.Min(7, sourceRevision.Length)])}";
             }
             
             // Na końcu użyj standardowej wersji assembly
-            return assembly.GetName().Version?.ToString() ?? "1.0.0";
+            return $"v{assembly.GetName().Version?.ToString() ?? "1.0.0"} ({channel}) | commit: {(string.IsNullOrEmpty(sourceRevision) ? "unknown" : sourceRevision[..Math.Min(7, sourceRevision.Length)])}";
         }
         catch (Exception)
         {

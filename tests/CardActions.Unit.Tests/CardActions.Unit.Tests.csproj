@@ -19,6 +19,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\CardActions.Application\CardActions.Application.csproj"/>
         <ProjectReference Include="..\..\src\CardActions.Infrastructure\CardActions.Infrastructure.csproj"/>
+        <ProjectReference Include="..\..\src\CardActions.Api\CardActions.Api.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
