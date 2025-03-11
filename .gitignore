@@ -484,8 +484,4 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# Wersja generowana przez semantic-release
-version.props
-
 # Generowane pliki wersji
-src/CardActions.Api/Version.cs
