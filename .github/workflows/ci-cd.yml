@@ -439,7 +439,7 @@ jobs:
                 transient_environment: environment !== "production",
                 production_environment: environment === "production",
               });
-              
+            
               // Ustawienie statusu na "success"
               await github.rest.repos.createDeploymentStatus({
                 owner: context.repo.owner,
@@ -450,7 +450,7 @@ jobs:
                 description: `Deployed ${version} (${channel}) to ${environment}`,
                 auto_inactive: true
               });
-              
+            
               console.log(`Created deployment record for ${version} to ${environment}`);
             } catch (error) {
               console.error("Failed to create deployment:", error);
@@ -467,7 +467,7 @@ jobs:
                 direction: 'desc',
                 per_page: 1
               });
-              
+            
               if (pulls && pulls.length > 0) {
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
