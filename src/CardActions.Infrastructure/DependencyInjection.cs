@@ -1,4 +1,5 @@
 using CardActions.Application.Services;
+using CardActions.Application.Services.Interfaces;
 using CardActions.Domain;
 using CardActions.Domain.Policies;
 using CardActions.Domain.Policies.Interfaces;
@@ -90,6 +91,9 @@ public static class DependencyInjection
             var rulesProvider = provider.GetRequiredService<ICardActionRulesProvider>();
             return new CardActionService(policy, rulesProvider.GetAllActionNames());
         });
+
+        // Rejestracja serwisu wersji
+        services.AddScoped<IVersionService, VersionService>();
 
         return services;
     }

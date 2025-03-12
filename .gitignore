@@ -157,6 +157,9 @@ coverage*.info
 *.coverage
 *.coveragexml
 
+# Code coverage report folder
+coveragereport/
+
 # NCrunch
 _NCrunch_*
 .*crunch*.local.xml
@@ -484,8 +487,4 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# Wersja generowana przez semantic-release
-version.props
-
 # Generowane pliki wersji
-src/CardActions.Api/Version.cs

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+    <PropertyGroup>
+        <!-- Wersja semantyczna -->
+        <Version>1.0.0</Version>
+        
+        <!-- Wersja informacyjna z hashiem commita -->
+        <InformationalVersion>1.0.0+97487de</InformationalVersion>
+        
+        <!-- Wersja assembly (xx.yy.0.0 format) -->
+        <AssemblyVersion>1.0.0.0</AssemblyVersion>
+        
+        <!-- Pełna wersja pliku -->
+        <FileVersion>1.0.0</FileVersion>
+        
+        <!-- Hash commita -->
+        <SourceRevisionId>97487de</SourceRevisionId>
+        
+        <!-- Data wydania -->
+        <BuildDate>2023-11-01T10:00:00.000Z</BuildDate>
+        
+        <!-- Kanał wydania - użyj środowiska lokalnego -->
+        <ReleaseChannel Condition="'$(Configuration)' == 'Release'">production</ReleaseChannel>
+        <ReleaseChannel Condition="'$(Configuration)' != 'Release'">development</ReleaseChannel>
+    </PropertyGroup>
+</Project> 
