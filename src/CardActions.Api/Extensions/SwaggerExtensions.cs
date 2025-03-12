@@ -22,7 +22,7 @@ public static class SwaggerExtensions
             {
                 // Pobierz wersję z assembly
                 var version = GetAssemblyVersion();
-                
+
                 config.PostProcess = document =>
                 {
                     document.Info.Title = "API Akcji Kart Płatniczych";
@@ -93,7 +93,7 @@ API umożliwia sprawdzenie dozwolonych akcji dla karty płatniczej na podstawie:
         {
             // Pobierz wersję z assembly
             var version = GetAssemblyVersion();
-            
+
             app.UseOpenApi(config =>
             {
                 config.Path = "/swagger/{documentName}/swagger.json";
@@ -116,9 +116,9 @@ API umożliwia sprawdzenie dozwolonych akcji dla karty płatniczej na podstawie:
 
         return app;
     }
-    
+
     /// <summary>
-    /// Pobiera wersję aplikacji z assembly
+    ///     Pobiera wersję aplikacji z assembly
     /// </summary>
     private static string GetAssemblyVersion()
     {
@@ -126,30 +126,30 @@ API umożliwia sprawdzenie dozwolonych akcji dla karty płatniczej na podstawie:
         {
             // Pobierz wersję z assembly
             var assembly = Assembly.GetExecutingAssembly();
-            
+
             // Najpierw spróbuj pobrać wersję z atrybutu informacyjnego
-            var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-            
+            var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion;
+
             // Pobierz metadane
             var metadataAttributes = assembly.GetCustomAttributes<AssemblyMetadataAttribute>().ToList();
             var sourceRevision = "unknown";
             var channel = "unknown";
-            
+
             // Debug: dodaj informacje o środowisku
-            var environment = System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "nie ustawiono";
-            channel = string.IsNullOrEmpty(environment) ? "unknown" : 
-                     (environment.ToLower().Contains("prod") ? "production" : 
-                     (environment.ToLower().Contains("dev") || environment.ToLower() == "development" ? "development" : environment));
-            
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "nie ustawiono";
+            channel = string.IsNullOrEmpty(environment) ? "unknown" :
+                environment.ToLower().Contains("prod") ? "production" :
+                environment.ToLower().Contains("dev") || environment.ToLower() == "development" ? "development" :
+                environment;
+
             // Pobierz wartości z metadanych
             foreach (var attr in metadataAttributes)
-            {
                 if (attr.Key == "SourceRevisionId")
                     sourceRevision = attr.Value;
                 else if (attr.Key == "ReleaseChannel")
                     channel = attr.Value;
-            }
-            
+
             // Utwórz rozszerzoną informację o wersji
             if (!string.IsNullOrEmpty(infoVersion))
             {
@@ -162,19 +162,20 @@ API umożliwia sprawdzenie dozwolonych akcji dla karty płatniczej na podstawie:
                     sourceRevision = baseVersion[(plusIndex + 1)..];
                     baseVersion = baseVersion.Substring(0, plusIndex);
                 }
-                
-                return $"v{baseVersion} ({channel}) | commit: {(string.IsNullOrEmpty(sourceRevision) ? "unknown" : sourceRevision[..Math.Min(7, sourceRevision.Length)])}";
+
+                return
+                    $"v{baseVersion} ({channel}) | commit: {(string.IsNullOrEmpty(sourceRevision) ? "unknown" : sourceRevision[..Math.Min(7, sourceRevision.Length)])}";
             }
-            
+
             // Następnie spróbuj pobrać wersję z atrybutu file version
             var fileVersion = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
             if (!string.IsNullOrEmpty(fileVersion))
-            {
-                return $"v{fileVersion} ({channel}) | commit: {(string.IsNullOrEmpty(sourceRevision) ? "unknown" : sourceRevision[..Math.Min(7, sourceRevision.Length)])}";
-            }
-            
+                return
+                    $"v{fileVersion} ({channel}) | commit: {(string.IsNullOrEmpty(sourceRevision) ? "unknown" : sourceRevision[..Math.Min(7, sourceRevision.Length)])}";
+
             // Na końcu użyj standardowej wersji assembly
-            return $"v{assembly.GetName().Version?.ToString() ?? "1.0.0"} ({channel}) | commit: {(string.IsNullOrEmpty(sourceRevision) ? "unknown" : sourceRevision[..Math.Min(7, sourceRevision.Length)])}";
+            return
+                $"v{assembly.GetName().Version?.ToString() ?? "1.0.0"} ({channel}) | commit: {(string.IsNullOrEmpty(sourceRevision) ? "unknown" : sourceRevision[..Math.Min(7, sourceRevision.Length)])}";
         }
         catch (Exception)
         {

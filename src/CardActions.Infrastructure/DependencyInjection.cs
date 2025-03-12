@@ -1,4 +1,5 @@
 using CardActions.Application.Services;
+using CardActions.Application.Services.Interfaces;
 using CardActions.Domain;
 using CardActions.Domain.Policies;
 using CardActions.Domain.Policies.Interfaces;
@@ -12,7 +13,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
-using CardActions.Application.Services.Interfaces;
 
 namespace CardActions.Infrastructure;
 
@@ -63,7 +63,7 @@ public static class DependencyInjection
         {
             var logger = provider.GetRequiredService<ILogger<CsvCardActionRulesLoader>>();
             var csvPath = configuration["CardActionRulesPath"] ??
-                        Path.Combine(AppContext.BaseDirectory, "Resources", "Allowed_Actions_Table.csv");
+                          Path.Combine(AppContext.BaseDirectory, "Resources", "Allowed_Actions_Table.csv");
             return new CsvCardActionRulesLoader(csvPath, logger);
         });
 
