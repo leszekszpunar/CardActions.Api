@@ -416,29 +416,68 @@ jobs:
           path: deployment.json
           retention-days: 30
 
-      - name: Create Deployment Tag
+      - name: Create Deployment Record
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const tagName = `deploy-${{ needs.release.outputs.version }}-${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}`;
-            const ref = `refs/tags/${tagName}`;
-            const sha = context.sha;
+            // Zamiast tworzyć tag deploy-, tworzymy wpis deployment w GitHub
+            const environment = ${{ github.ref == 'refs/heads/main' && '"production"' || '"development"' }};
+            const version = "${{ needs.release.outputs.version }}";
+            const channel = "${{ needs.release.outputs.channel }}";
             
             try {
-              await github.rest.git.createRef({
+              // Utworzenie wpisu deployment w GitHub
+              const deployment = await github.rest.repos.createDeployment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: ref,
-                sha: sha
+                ref: context.sha,
+                environment: environment,
+                auto_merge: false,
+                required_contexts: [],
+                description: `Deployment of version ${version} to ${environment}`,
+                transient_environment: environment !== "production",
+                production_environment: environment === "production",
               });
-              console.log(`Created tag: ${tagName}`);
+              
+              // Ustawienie statusu na "success"
+              await github.rest.repos.createDeploymentStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                deployment_id: deployment.data.id,
+                state: "success",
+                environment_url: "${{ steps.service_details.outputs.service_url }}",
+                description: `Deployed ${version} (${channel}) to ${environment}`,
+                auto_inactive: true
+              });
+              
+              console.log(`Created deployment record for ${version} to ${environment}`);
             } catch (error) {
-              if (error.status === 422) {
-                console.log(`Tag ${tagName} already exists.`);
-              } else {
-                throw error;
+              console.error("Failed to create deployment:", error);
+            }
+            
+            // Dodajemy komentarz do ostatniego PR/commita
+            try {
+              // Pobierz ostatni PR
+              const { data: pulls } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'closed',
+                sort: 'updated',
+                direction: 'desc',
+                per_page: 1
+              });
+              
+              if (pulls && pulls.length > 0) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pulls[0].number,
+                  body: `🚀 Deployed version ${version} (${channel}) to ${environment} environment.\n\nURL: ${{ steps.service_details.outputs.service_url }}`
+                });
               }
+            } catch (error) {
+              console.log("Unable to comment on PR:", error);
             }
 
   # 6. Cleanup starych obrazów Docker
