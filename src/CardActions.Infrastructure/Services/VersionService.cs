@@ -68,13 +68,10 @@ internal class VersionService : IVersionService
                     var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "";
                     releaseChannel = string.IsNullOrEmpty(environment)
                         ? "unknown"
-                        :
-                        environment.ToLower().Contains("prod")
+                        : environment.ToLower().Contains("prod")
                             ? "production"
-                            :
-                            environment.ToLower().Contains("dev") || environment.ToLower() == "development"
-                                ?
-                                "development"
+                            : environment.ToLower().Contains("dev") || environment.ToLower() == "development"
+                                ? "development"
                                 : environment;
 
                     _logger.LogInformation(
