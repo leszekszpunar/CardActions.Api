@@ -1,5 +1,4 @@
 using System.Reflection;
-using CardActions.Application.Features.Version.Queries.GetVersionInfo;
 using CardActions.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -7,7 +6,7 @@ using Moq;
 namespace CardActions.Unit.Tests.Services;
 
 /// <summary>
-/// Testy jednostkowe dla VersionService, który pobiera informacje o wersji aplikacji
+///     Testy jednostkowe dla VersionService, który pobiera informacje o wersji aplikacji
 /// </summary>
 [Trait("Category", "Unit")]
 [Trait("Component", "Services")]
@@ -80,11 +79,11 @@ public class VersionServiceTests
     public void GetVersionInfo_ShouldExtractCommitHashFromInformationalVersion()
     {
         // Arrange & Act
-        var result = _service.GetVersionInfo(_testAssembly, true);
+        var result = _service.GetVersionInfo(_testAssembly);
 
         // Assert
         result.ShouldNotBeNull();
-        
+
         // Sprawdzamy, czy hash commita został wyciągnięty z InformationalVersion
         if (result.FullVersion.Contains("+"))
         {
@@ -92,4 +91,4 @@ public class VersionServiceTests
             result.CommitHash.ShouldContain(commitHash);
         }
     }
-} 
+}

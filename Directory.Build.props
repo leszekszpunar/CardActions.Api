@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
     <!-- Import wersji z zewnętrznego pliku -->
-    <Import Project="version.props" Condition="Exists('version.props')" />
-    
+    <Import Project="version.props" Condition="Exists('version.props')"/>
+
     <!-- Wspólne właściwości dla wszystkich projektów -->
     <PropertyGroup>
         <!-- Ustaw wersję domyślną, jeśli nie jest zdefiniowana w version.props -->
         <Version Condition="'$(Version)' == ''">1.0.0</Version>
-        
+
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
