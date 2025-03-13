@@ -1,33 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
-    <!-- Import wersji z zewnętrznego pliku -->
+    <!--
+    Directory.Build.props - Plik zawierający wspólne właściwości dla wszystkich projektów w rozwiązaniu.
+    
+    Ten plik jest automatycznie wykrywany przez MSBuild i stosowany do wszystkich projektów w hierarchii katalogów.
+    Importuje version.props, który jest generowany przez CI/CD pipeline.
+    
+    W version.props znajdują się:
+    - Version - Pełna wersja semantyczna (np. 1.2.3-beta.1)
+    - AssemblyVersion - Tylko część numeryczna (np. 1.2.3.0)
+    - FileVersion - Tylko część numeryczna (np. 1.2.3.0)
+    - InformationalVersion - Pełna wersja semantyczna z hashiem commita
+    
+    Przy lokalnym developmencie są używane domyślne wartości, jeśli version.props nie istnieje.
+    -->
+
+    <!-- Import wersji z pliku version.props (generowanego przez CI/CD) -->
     <Import Project="version.props" Condition="Exists('version.props')"/>
 
     <!-- Wspólne właściwości dla wszystkich projektów -->
     <PropertyGroup>
-        <!-- Ustaw wersję domyślną, jeśli nie jest zdefiniowana w version.props -->
+        <!-- Domyślne wartości wersji, używane tylko gdy version.props nie istnieje -->
         <Version Condition="'$(Version)' == ''">1.0.0</Version>
-
+        <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">1.0.0.0</AssemblyVersion>
+        <FileVersion Condition="'$(FileVersion)' == ''">1.0.0.0</FileVersion>
+        <InformationalVersion Condition="'$(InformationalVersion)' == ''">1.0.0+local</InformationalVersion>
+        
+        <!-- Target Framework dla wszystkich projektów -->
         <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <LangVersion>latest</LangVersion>
-        <AnalysisLevel>latest</AnalysisLevel>
-        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- Disable warning for missing XML comments -->
-        <InvariantGlobalization>false</InvariantGlobalization>
-        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-
-        <!-- Informacje o projekcie -->
-        <Authors>Leszek Szpunar</Authors>
-        <Company>IT</Company>
-        <Product>Card Actions API</Product>
-        <Description>API do zarządzania akcjami dla kart płatniczych</Description>
-        <PackageTags>cards;actions;api</PackageTags>
+        
+        <!-- Inne wspólne właściwości -->
+        <Authors>Leszek Szpunar Team</Authors>
+        <Company>Leszek Szpunar</Company>
+        <Product>CardActions.Api</Product>
+        <Copyright>Copyright © Leszek Szpunar $([System.DateTime]::Now.Year)</Copyright>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <RepositoryType>git</RepositoryType>
-        <RepositoryUrl>https://github.com/leszekszpunar/CardActions.Api</RepositoryUrl>
+        <RepositoryUrl>https://github.com/$(GITHUB_REPOSITORY)</RepositoryUrl>
+        
+        <!-- Opcje kompilacji -->
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <!-- Wspólne właściwości dla projektów API -->

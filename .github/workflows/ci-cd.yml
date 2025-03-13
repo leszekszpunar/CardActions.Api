@@ -149,35 +149,68 @@ jobs:
         run: |
           dotnet restore
           
-          # Użyj wersji wygenerowanej przez semantic-release
-          VERSION="${{ needs.release.outputs.version }}"
-          VERSION_NUM="${{ needs.release.outputs.version_numeric }}"
+          # Wyświetl wersje z kroku release
+          echo "Semantic version: ${{ needs.release.outputs.version }}"
+          echo "Assembly version: ${{ needs.release.outputs.version_numeric }}.0"
           
-          echo "Using version from semantic-release: $VERSION"
-          echo "Using numeric version for assembly: $VERSION_NUM"
+          # Buduj projekt z nadpisaniem wersji
+          dotnet build --no-restore --configuration Release \
+            -p:Version=${{ needs.release.outputs.version }} \
+            -p:AssemblyVersion=${{ needs.release.outputs.version_numeric }}.0 \
+            -p:FileVersion=${{ needs.release.outputs.version_numeric }}.0 \
+            -p:InformationalVersion=${{ needs.release.outputs.version }}
           
-          # Używamy /property, aby bezpośrednio nadpisać właściwości AssemblyVersion i FileVersion
-          dotnet build --no-restore --configuration Release /property:AssemblyVersion=$VERSION_NUM.0 /property:FileVersion=$VERSION_NUM.0 /property:InformationalVersion="$VERSION"
-          
-          # Instaluj potrzebne pakiety do testów
-          dotnet add ./test/CardActions.Tests/CardActions.Tests.csproj package coverlet.msbuild || echo "Coverlet already installed or not applicable"
-          
-          # Uruchom testy z generowaniem raportu
+          # Upewnij się, że katalog testów istnieje
           mkdir -p TestResults
-          dotnet test --no-build --configuration Release --logger "trx;LogFileName=testresults.trx" --results-directory ./TestResults /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=./TestResults/coverage.cobertura.xml || true
+          
+          # Znajdź projekty testowe
+          TEST_PROJECTS=$(find . -name "*.Tests.csproj" -o -name "*Tests.csproj")
+          if [ -z "$TEST_PROJECTS" ]; then
+            echo "No test projects found!"
+          else
+            echo "Found test projects: $TEST_PROJECTS"
+            
+            # Instaluj potrzebne pakiety do testów
+            for PROJECT in $TEST_PROJECTS; do
+              dotnet add "$PROJECT" package coverlet.msbuild || echo "Coverlet already installed or not applicable for $PROJECT"
+            done
+            
+            # Uruchom testy z generowaniem raportu
+            dotnet test --no-build --configuration Release \
+              --logger "trx;LogFileName=testresults.trx" \
+              --results-directory ./TestResults \
+              /p:CollectCoverage=true \
+              /p:CoverletOutputFormat=cobertura \
+              /p:CoverletOutput=./TestResults/coverage.cobertura.xml \
+              || echo "Tests completed with failures"
+            
+            # Upewnij się, że pliki istnieją
+            find ./TestResults -type f -name "*.trx" -o -name "*.xml" | while read -r file; do
+              echo "Generated test report: $file"
+            done
+          fi
 
       - name: Generate Coverage Report
         continue-on-error: true
         run: |
+          # Zainstaluj narzędzie ReportGenerator
+          dotnet tool install -g dotnet-reportgenerator-globaltool || echo "ReportGenerator already installed"
+          
           # Sprawdź, czy istnieją pliki coverage przed próbą generowania raportów
-          if ls TestResults/*.xml 1> /dev/null 2>&1; then
-            dotnet tool install -g dotnet-reportgenerator-globaltool || true
-            reportgenerator -reports:TestResults/*.xml -targetdir:TestResults/coveragereport -reporttypes:HtmlInline_AzurePipelines || true
+          COVERAGE_FILES=$(find ./TestResults -name "*.xml" 2>/dev/null)
+          if [ -n "$COVERAGE_FILES" ]; then
+            echo "Found coverage files: $COVERAGE_FILES"
+            mkdir -p TestResults/coveragereport
+            reportgenerator -reports:TestResults/*.xml -targetdir:TestResults/coveragereport -reporttypes:HtmlInline_AzurePipelines || echo "ReportGenerator failed"
           else
             echo "No coverage files found. Skipping report generation."
             # Tworzymy pusty katalog, aby uniknąć błędów w kroku upload
             mkdir -p TestResults/coveragereport
+            touch TestResults/coveragereport/index.html  # Dodaj pusty plik, aby uniknąć błędów
           fi
+          
+          # Lista wszystkich wygenerowanych plików
+          find ./TestResults -type f | sort
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
@@ -186,14 +219,16 @@ jobs:
           name: test-results
           path: TestResults/
           retention-days: 1
-          if-no-files-found: ignore
+          if-no-files-found: warn
 
       - name: Publish
         run: |
+          # Publikuj z tymi samymi właściwościami wersji
           dotnet publish src/CardActions.Api/CardActions.Api.csproj -c Release -o publish \
-            /property:AssemblyVersion=${{ needs.release.outputs.version_numeric }}.0 \
-            /property:FileVersion=${{ needs.release.outputs.version_numeric }}.0 \
-            /property:InformationalVersion="${{ needs.release.outputs.version }}"
+            -p:Version=${{ needs.release.outputs.version }} \
+            -p:AssemblyVersion=${{ needs.release.outputs.version_numeric }}.0 \
+            -p:FileVersion=${{ needs.release.outputs.version_numeric }}.0 \
+            -p:InformationalVersion=${{ needs.release.outputs.version }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
