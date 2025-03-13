@@ -155,4 +155,4 @@ Dla każdego Pull Requesta automatycznie generowany jest komentarz zawierający:
    
    # Ręczne wygenerowanie raportu
    reportgenerator -reports:"coverage/**/coverage.cobertura.xml" -targetdir:"coveragereport" -reporttypes:"MarkdownSummary;Html;Badges"
-   ``` 
+   ```
