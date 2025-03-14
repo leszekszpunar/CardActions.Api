@@ -2,10 +2,10 @@
 <Project>
     <PropertyGroup>
         <!-- Wersja semantyczna dla NuGet -->
-        <Version>1.1.5-beta.2</Version>
+        <Version>1.1.5</Version>
         
         <!-- Wersja informacyjna z hashiem commita -->
-        <InformationalVersion>1.1.5-beta.2+bbebcc0e68f6cc4f2237e2ccda21f688c1790709</InformationalVersion>
+        <InformationalVersion>1.1.5+036802d7ec0a1de563e3bac00ad10813d3ac1169</InformationalVersion>
         
         <!-- Wersja assembly (xx.yy.zz.ww format) - tylko numeryczna część bez prerelease -->
         <AssemblyVersion>1.1.5.0</AssemblyVersion>
@@ -14,12 +14,12 @@
         <FileVersion>1.1.5</FileVersion>
         
         <!-- Hash commita -->
-        <SourceRevisionId>bbebcc0e68f6cc4f2237e2ccda21f688c1790709</SourceRevisionId>
+        <SourceRevisionId>036802d7ec0a1de563e3bac00ad10813d3ac1169</SourceRevisionId>
         
         <!-- Data wydania -->
-        <BuildDate>"2025-03-14T18:16:28Z"</BuildDate>
+        <BuildDate>"2025-03-14T18:27:26Z"</BuildDate>
         
         <!-- Kanał wydania -->
-        <ReleaseChannel>"development"</ReleaseChannel>
+        <ReleaseChannel>"production"</ReleaseChannel>
     </PropertyGroup>
 </Project>
