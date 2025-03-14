@@ -1,3 +1,14 @@
+## [1.1.5-beta.2](https://github.com/leszekszpunar/CardActions.Api/compare/v1.1.5-beta.1...v1.1.5-beta.2) (2025-03-14)
+
+
+### Bug Fixes
+
+* enhance ci-cd.yml for improved test execution and coverage reporting ([d5d20b1](https://github.com/leszekszpunar/CardActions.Api/commit/d5d20b17ae7e553b08844282cecc343092b262a2))
+* refactor ci-cd.yml to streamline release and build processes with version extraction ([0d28630](https://github.com/leszekszpunar/CardActions.Api/commit/0d286303de27deb03d0aff0f870d3f03ddc7e910))
+* update .releaserc.json and ci-cd.yml for improved versioning and test coverage reporting ([a893ff0](https://github.com/leszekszpunar/CardActions.Api/commit/a893ff0d90f6cda062a90e929790e3094c6d88aa))
+* update prepareCmd in .releaserc.json to adjust assembly version ([5d01f43](https://github.com/leszekszpunar/CardActions.Api/commit/5d01f43fca0d56cb642ef3746ef44c32b7f870c7))
+* update prepareCmd in .releaserc.json to adjust assembly version format ([9d644e2](https://github.com/leszekszpunar/CardActions.Api/commit/9d644e277ef6da9e92cd1e22be5c7f964533f305))
+
 ## [1.1.5-beta.1](https://github.com/leszekszpunar/CardActions.Api/compare/v1.1.4...v1.1.5-beta.1) (2025-03-13)
 
 
