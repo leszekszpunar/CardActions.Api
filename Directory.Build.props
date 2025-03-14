@@ -26,6 +26,10 @@
         <FileVersion Condition="'$(FileVersion)' == ''">1.0.0.0</FileVersion>
         <InformationalVersion Condition="'$(InformationalVersion)' == ''">1.0.0+local</InformationalVersion>
         
+        <!-- Korekta formatu FileVersion - usuwa część przedpremierową (np. -beta.1) i dodaje .0 na końcu -->
+        <_FileVersionWithoutPrerelease>$([System.Text.RegularExpressions.Regex]::Replace($(FileVersion), '-.*', ''))</_FileVersionWithoutPrerelease>
+        <FileVersion Condition="'$(_FileVersionWithoutPrerelease)' != ''">$(_FileVersionWithoutPrerelease).0</FileVersion>
+        
         <!-- Target Framework dla wszystkich projektów -->
         <TargetFramework>net8.0</TargetFramework>
         
