@@ -1,3 +1,10 @@
+## [1.1.6](https://github.com/leszekszpunar/CardActions.Api/compare/v1.1.5...v1.1.6) (2025-03-14)
+
+
+### Bug Fixes
+
+* enhance ci-cd.yml for improved build, test execution, and coverage reporting ([a84804f](https://github.com/leszekszpunar/CardActions.Api/commit/a84804f4cfcaa0cee874e4a81427be3732dcf2c1))
+
 ## [1.1.6-beta.1](https://github.com/leszekszpunar/CardActions.Api/compare/v1.1.5...v1.1.6-beta.1) (2025-03-14)
 
 
