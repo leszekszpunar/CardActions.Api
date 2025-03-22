@@ -1,6 +1,9 @@
+using CardActions.Domain.Enums;
 using CardActions.Domain.Models;
 using CardActions.Domain.Policies;
 using CardActions.Domain.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit.Abstractions;
 
 namespace CardActions.Unit.Tests.Services;
@@ -20,11 +23,14 @@ public class CardActionIntegrationTests
         _testOutputHelper = testOutputHelper;
         _rulesProvider = new TestCardActionRulesProvider();
         _policy = new CardActionPolicy(_rulesProvider.GetAllRules());
-        _service = new CardActionService(_policy, _rulesProvider.GetAllActionNames());
+        
+        // Używam konstruktora tylko z loggerem
+        var serviceLogger = new Mock<ILogger<CardActionService>>().Object;
+        _service = new CardActionService(serviceLogger);
     }
 
     [Fact]
-    public void GetAllowedActions_ForActiveDebitCard_ShouldReturnCorrectActions()
+    public async Task GetAllowedActions_ForActiveDebitCard_ShouldReturnCorrectActions()
     {
         // Arrange
         var expectedActions = new[]
@@ -34,20 +40,26 @@ public class CardActionIntegrationTests
         };
 
         // Act
-        var result = _service.GetAllowedActions(CardType.Debit, CardStatus.Active, true);
+        var result = await _service.GetAllowedActionsAsync(CardType.Debit, CardStatus.Active, true);
 
         // Assert
-        result.Count.ShouldBe(expectedActions.Length);
         var resultNames = result.Select(a => a.Name).ToList();
-        foreach (var expectedAction in expectedActions) resultNames.ShouldContain(expectedAction);
-
-        // Wyświetlenie wszystkich dozwolonych akcji dla lepszej przejrzystości
-        _testOutputHelper.WriteLine("Dozwolone akcje dla karty debetowej w statusie Active z ustawionym PIN:");
-        foreach (var action in result) _testOutputHelper.WriteLine($"- {action.Name}");
+        _testOutputHelper.WriteLine($"Znalezione akcje ({result.Count}): {string.Join(", ", resultNames)}");
+        
+        // Sprawdzamy czy wszystkie oczekiwane akcje są na liście
+        foreach (var expectedAction in expectedActions)
+        {
+            resultNames.ShouldContain(expectedAction, 
+                $"Akcja {expectedAction} powinna być dozwolona dla karty Debit w statusie Active z ustawionym PIN");
+        }
+        
+        // Sprawdzamy czy liczba akcji jest zgodna z oczekiwaniem
+        result.Count.ShouldBe(expectedActions.Length,
+            $"Liczba dozwolonych akcji dla karty Debit w statusie Active z ustawionym PIN powinna wynosić {expectedActions.Length}, ale wynosi {result.Count}");
     }
 
     [Fact]
-    public void GetAllowedActions_ForBlockedCreditCard_ShouldReturnCorrectActions()
+    public async Task GetAllowedActions_ForBlockedCreditCard_ShouldReturnCorrectActions()
     {
         // Arrange
         var expectedActions = new[]
@@ -56,61 +68,88 @@ public class CardActionIntegrationTests
         };
 
         // Act
-        var result = _service.GetAllowedActions(CardType.Credit, CardStatus.Blocked, true);
+        var result = await _service.GetAllowedActionsAsync(CardType.Credit, CardStatus.Blocked, true);
 
         // Assert
-        result.Count.ShouldBe(expectedActions.Length);
         var resultNames = result.Select(a => a.Name).ToList();
-        foreach (var expectedAction in expectedActions) resultNames.ShouldContain(expectedAction);
-
-        // Wyświetlenie wszystkich dozwolonych akcji dla lepszej przejrzystości
-        _testOutputHelper.WriteLine("Dozwolone akcje dla karty kredytowej w statusie Blocked z ustawionym PIN:");
-        foreach (var action in result) _testOutputHelper.WriteLine($"- {action.Name}");
+        _testOutputHelper.WriteLine($"Znalezione akcje ({result.Count}): {string.Join(", ", resultNames)}");
+        
+        // Sprawdzamy czy wszystkie oczekiwane akcje są na liście
+        foreach (var expectedAction in expectedActions)
+        {
+            resultNames.ShouldContain(expectedAction, 
+                $"Akcja {expectedAction} powinna być dozwolona dla karty Credit w statusie Blocked z ustawionym PIN");
+        }
+        
+        // Sprawdzamy czy liczba akcji jest zgodna z oczekiwaniem
+        result.Count.ShouldBe(expectedActions.Length,
+            $"Liczba dozwolonych akcji dla karty Credit w statusie Blocked z ustawionym PIN powinna wynosić {expectedActions.Length}");
     }
 
     [Fact]
-    public void GetAllowedActions_ForOrderedPrepaidCardWithoutPin_ShouldReturnCorrectActions()
-    {
-        // Act
-        var result = _service.GetAllowedActions(CardType.Prepaid, CardStatus.Ordered, false);
-
-        // Assert
-        result.ShouldContain(a => a.Name == "ACTION7"); // ACTION7 jest dozwolone dla kart bez PIN
-        result.ShouldNotContain(a => a.Name == "ACTION6"); // ACTION6 jest niedozwolone dla kart bez PIN
-
-        // Wyświetlenie wszystkich dozwolonych akcji dla lepszej przejrzystości
-        _testOutputHelper.WriteLine("Dozwolone akcje dla karty prepaid w statusie Ordered bez ustawionego PIN:");
-        foreach (var action in result) _testOutputHelper.WriteLine($"- {action.Name}");
-    }
-
-    [Fact]
-    public void GetAllowedActions_ForOrderedPrepaidCardWithPin_ShouldReturnCorrectActions()
-    {
-        // Act
-        var result = _service.GetAllowedActions(CardType.Prepaid, CardStatus.Ordered, true);
-
-        // Assert
-        result.ShouldContain(a => a.Name == "ACTION6"); // ACTION6 jest dozwolone dla kart z PIN
-        result.ShouldNotContain(a => a.Name == "ACTION7"); // ACTION7 jest niedozwolone dla kart z PIN
-
-        // Wyświetlenie wszystkich dozwolonych akcji dla lepszej przejrzystości
-        _testOutputHelper.WriteLine("Dozwolone akcje dla karty prepaid w statusie Ordered z ustawionym PIN:");
-        foreach (var action in result) _testOutputHelper.WriteLine($"- {action.Name}");
-    }
-
-    [Fact]
-    public void GetAllowedActions_ForAllCardTypesAndStatuses_ShouldAlwaysIncludeBasicActions()
+    public async Task GetAllowedActions_ForOrderedPrepaidCardWithoutPin_ShouldReturnCorrectActions()
     {
         // Arrange
-        var basicActions = new[] { "ACTION3", "ACTION4", "ACTION9" };
+        var expectedActions = new[] { "ACTION3", "ACTION4", "ACTION5", "ACTION8", "ACTION9", "ACTION10", "ACTION12", "ACTION13" };
+        
+        // Act
+        var result = await _service.GetAllowedActionsAsync(CardType.Prepaid, CardStatus.Ordered, false);
+
+        // Assert
+        var resultNames = result.Select(a => a.Name).ToList();
+        _testOutputHelper.WriteLine($"Znalezione akcje ({result.Count}): {string.Join(", ", resultNames)}");
+        
+        // Sprawdzamy zgodnie z tabelą: "TAK - ale jak nie ma pin to NIE"
+        resultNames.ShouldNotContain("ACTION6", "ACTION6 nie powinna być dozwolona dla karty Prepaid w statusie Ordered bez PIN");
+        
+        // Sprawdzamy zgodnie z tabelą: "TAK - jeżeli brak pin"
+        resultNames.ShouldContain("ACTION7", "ACTION7 powinna być dozwolona dla karty Prepaid w statusie Ordered bez PIN");
+        
+        // Sprawdzamy czy liczba akcji jest zgodna z oczekiwaniem
+        result.Count.ShouldBe(expectedActions.Length,
+            $"Liczba dozwolonych akcji dla karty Prepaid w statusie Ordered bez PIN powinna wynosić {expectedActions.Length}");
+    }
+
+    [Fact]
+    public async Task GetAllowedActions_ForOrderedPrepaidCardWithPin_ShouldReturnCorrectActions()
+    {
+        // Arrange
+        var expectedActions = new[] { "ACTION3", "ACTION4", "ACTION5", "ACTION6", "ACTION8", "ACTION9", "ACTION10", "ACTION12", "ACTION13" };
+        
+        // Act
+        var result = await _service.GetAllowedActionsAsync(CardType.Prepaid, CardStatus.Ordered, true);
+
+        // Assert
+        var resultNames = result.Select(a => a.Name).ToList();
+        _testOutputHelper.WriteLine($"Znalezione akcje ({result.Count}): {string.Join(", ", resultNames)}");
+        
+        // Sprawdzamy zgodnie z tabelą: "TAK - ale jak nie ma pin to NIE"
+        resultNames.ShouldContain("ACTION6", "ACTION6 powinna być dozwolona dla karty Prepaid w statusie Ordered z PIN");
+        
+        // Sprawdzamy zgodnie z tabelą: "TAK - jeżeli brak pin"
+        resultNames.ShouldNotContain("ACTION7", "ACTION7 nie powinna być dozwolona dla karty Prepaid w statusie Ordered z PIN");
+        
+        // Sprawdzamy czy liczba akcji jest zgodna z oczekiwaniem
+        result.Count.ShouldBe(expectedActions.Length,
+            $"Liczba dozwolonych akcji dla karty Prepaid w statusie Ordered z PIN powinna wynosić {expectedActions.Length}");
+    }
+
+    [Fact]
+    public async Task GetAllowedActions_ForAllCardTypesAndStatuses_ShouldAlwaysIncludeBasicActions()
+    {
+        // Arrange
+        var basicActions = new[] { "ACTION3", "ACTION4" };
 
         // Act & Assert
         foreach (var cardType in Enum.GetValues<CardType>())
         foreach (var cardStatus in Enum.GetValues<CardStatus>())
         foreach (var isPinSet in new[] { true, false })
         {
-            var result = _service.GetAllowedActions(cardType, cardStatus, isPinSet);
+            var result = await _service.GetAllowedActionsAsync(cardType, cardStatus, isPinSet);
             var resultNames = result.Select(a => a.Name).ToList();
+            
+            _testOutputHelper.WriteLine($"Testowanie dla {cardType} w statusie {cardStatus} z isPinSet={isPinSet}");
+            _testOutputHelper.WriteLine($"Znalezione akcje ({result.Count}): {string.Join(", ", resultNames)}");
 
             foreach (var basicAction in basicActions)
                 resultNames.ShouldContain(basicAction,

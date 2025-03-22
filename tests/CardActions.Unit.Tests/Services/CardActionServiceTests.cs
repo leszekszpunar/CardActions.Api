@@ -1,6 +1,8 @@
+using CardActions.Domain.Enums;
 using CardActions.Domain.Models;
 using CardActions.Domain.Policies.Interfaces;
 using CardActions.Domain.Services;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CardActions.Unit.Tests.Services;
@@ -20,7 +22,10 @@ public class CardActionServiceTests
             "ACTION6", "ACTION7", "ACTION8", "ACTION9", "ACTION10",
             "ACTION11", "ACTION12", "ACTION13"
         };
-        _service = new CardActionService(_policyMock.Object, _allActionNames);
+        
+        // Używam konstruktora tylko z loggerem
+        var serviceLogger = new Mock<ILogger<CardActionService>>().Object;
+        _service = new CardActionService(serviceLogger);
     }
 
     [Theory]
@@ -34,30 +39,30 @@ public class CardActionServiceTests
             "ACTION11", "ACTION12", "ACTION13"
         })]
     [InlineData(CardType.Credit, CardStatus.Restricted, false, new[] { "ACTION3", "ACTION4", "ACTION5", "ACTION9" })]
-    public void GetAllowedActions_ForVariousCardTypesAndStatuses_ShouldReturnCorrectActions(
+    public async Task GetAllowedActionsAsync_ForVariousCardTypesAndStatuses_ShouldReturnCorrectActions(
         CardType cardType,
         CardStatus cardStatus,
         bool isPinSet,
         string[] expectedActions)
     {
-        // Arrange
-        foreach (var action in _allActionNames)
-        {
-            var isAllowed = expectedActions.Contains(action);
-            _policyMock.Setup(p => p.IsActionAllowed(action, cardType, cardStatus, isPinSet))
-                .Returns(isAllowed);
-        }
+        // Arrange: Ustawienia testowe nie są konieczne, ponieważ korzystamy z rzeczywistej implementacji
 
-        // Act
-        var result = _service.GetAllowedActions(cardType, cardStatus, isPinSet);
+        // Act: Wywołujemy asynchroniczną metodę
+        var result = await _service.GetAllowedActionsAsync(cardType, cardStatus, isPinSet);
 
         // Assert
-        result.Count.ShouldBe(expectedActions.Length);
         var resultNames = result.Select(a => a.Name).ToList();
-        foreach (var expectedAction in expectedActions) resultNames.ShouldContain(expectedAction);
-
-        foreach (var action in _allActionNames)
-            _policyMock.Verify(p => p.IsActionAllowed(action, cardType, cardStatus, isPinSet), Times.Once);
+        
+        // Sprawdzamy czy wszystkie oczekiwane akcje są na liście
+        foreach (var expectedAction in expectedActions)
+        {
+            resultNames.ShouldContain(expectedAction, 
+                $"Akcja {expectedAction} powinna być dozwolona dla {cardType} w statusie {cardStatus} z PIN={isPinSet}");
+        }
+        
+        // Sprawdzamy czy liczba akcji jest zgodna z oczekiwaniem
+        result.Count.ShouldBe(expectedActions.Length,
+            $"Liczba dozwolonych akcji dla {cardType} w statusie {cardStatus} z PIN={isPinSet} powinna wynosić {expectedActions.Length}, ale wynosi {result.Count}");
     }
 
     [Fact]
@@ -69,6 +74,10 @@ public class CardActionServiceTests
         // Assert
         result.Count.ShouldBe(_allActionNames.Count);
         var resultNames = result.Select(a => a.Name).ToList();
-        foreach (var expectedAction in _allActionNames) resultNames.ShouldContain(expectedAction);
+        foreach (var expectedAction in _allActionNames)
+        {
+            resultNames.ShouldContain(expectedAction, 
+                $"Lista wszystkich akcji powinna zawierać akcję {expectedAction}");
+        }
     }
 }

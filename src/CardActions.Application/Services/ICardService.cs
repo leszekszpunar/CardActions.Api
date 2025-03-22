@@ -13,5 +13,5 @@ public interface ICardService
     /// <param name="userId">Identyfikator użytkownika</param>
     /// <param name="cardNumber">Numer karty</param>
     /// <returns>Szczegóły karty lub null, jeśli karta nie została znaleziona</returns>
-    Task<CardDetails?> GetCardDetails(string userId, string cardNumber);
+    Task<CardDetails?> GetCardDetailsAsync(string userId, string cardNumber);
 }

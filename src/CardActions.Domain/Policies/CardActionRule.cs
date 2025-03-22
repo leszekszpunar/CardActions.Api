@@ -1,4 +1,5 @@
 using CardActions.Domain.Models;
+using CardActions.Domain.Enums;
 
 namespace CardActions.Domain.Policies;
 
@@ -26,7 +27,7 @@ public class CardActionRule
     /// <param name="isAllowed">Czy akcja jest dozwolona</param>
     /// <param name="requiresPinSet">Czy akcja wymaga ustawionego PIN-u</param>
     /// <exception cref="ArgumentNullException">Rzucany, gdy actionName jest null</exception>
-    public CardActionRule(string actionName, CardType cardType, CardStatus cardStatus, bool isAllowed,
+    public CardActionRule(string actionName, Enums.CardType cardType, Enums.CardStatus cardStatus, bool isAllowed,
         bool? requiresPinSet = null)
     {
         ActionName = actionName ?? throw new ArgumentNullException(nameof(actionName));
@@ -44,12 +45,12 @@ public class CardActionRule
     /// <summary>
     ///     Typ karty, dla którego obowiązuje reguła.
     /// </summary>
-    public CardType CardType { get; }
+    public Enums.CardType CardType { get; }
 
     /// <summary>
     ///     Status karty, dla którego obowiązuje reguła.
     /// </summary>
-    public CardStatus CardStatus { get; }
+    public Enums.CardStatus CardStatus { get; }
 
     /// <summary>
     ///     Określa, czy akcja jest dozwolona dla podanego typu i statusu karty.

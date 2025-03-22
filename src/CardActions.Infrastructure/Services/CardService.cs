@@ -1,4 +1,5 @@
 using CardActions.Application.Services;
+using CardActions.Domain.Enums;
 using CardActions.Domain.Models;
 using Microsoft.Extensions.Logging;
 
@@ -33,34 +34,24 @@ internal class CardService : ICardService
     /// <param name="userId">Identyfikator użytkownika</param>
     /// <param name="cardNumber">Numer karty</param>
     /// <returns>Szczegóły karty lub null, jeśli karta nie została znaleziona</returns>
-    public async Task<CardDetails?> GetCardDetails(string userId, string cardNumber)
+    public async Task<CardDetails?> GetCardDetailsAsync(string userId, string cardNumber)
     {
-        _logger.LogInformation("Getting card details for user '{UserId}' and card '{CardNumber}'", userId, cardNumber);
-
         // At this point, we would typically make an HTTP call to an external service
         // to fetch the data. For this example we use generated sample data.
-        await Task.Delay(100); // Reduced delay for better UX in development
-
-        if (!_userCards.TryGetValue(userId, out var cards))
+        await Task.Delay(1000);
+        if (!_userCards.TryGetValue(userId, out var cards)
+            || !cards.TryGetValue(cardNumber, out var cardDetails))
         {
-            _logger.LogWarning("User '{UserId}' not found. Available users: {AvailableUsers}",
-                userId, string.Join(", ", _userCards.Keys));
             return null;
         }
 
-        if (!cards.TryGetValue(cardNumber, out var cardDetails))
-        {
-            _logger.LogWarning("Card '{CardNumber}' not found for user '{UserId}'. Available cards: {AvailableCards}",
-                cardNumber, userId, string.Join(", ", cards.Keys.Take(5)) + (cards.Keys.Count > 5 ? "..." : ""));
-            return null;
-        }
-
-        _logger.LogInformation(
-            "Card '{CardNumber}' found for user '{UserId}'. Type: {CardType}, Status: {CardStatus}, HasPin: {HasPin}",
-            cardNumber, userId, cardDetails.CardType, cardDetails.CardStatus, cardDetails.IsPinSet);
         return cardDetails;
     }
 
+    /// <summary>
+    ///   Tworzy przykładowe dane kart dla użytkowników.
+    /// </summary>
+    /// <returns>Przykładowe dane kart dla użytkowników</returns>
     private static Dictionary<string, Dictionary<string, CardDetails>> CreateSampleUserCards()
     {
         var userCards = new Dictionary<string, Dictionary<string, CardDetails>>();
@@ -69,16 +60,18 @@ internal class CardService : ICardService
             var cards = new Dictionary<string, CardDetails>();
             var cardIndex = 1;
             foreach (CardType cardType in Enum.GetValues(typeof(CardType)))
-            foreach (CardStatus cardStatus in Enum.GetValues(typeof(CardStatus)))
             {
-                var cardNumber = $"Card{i}{cardIndex}";
-                cards.Add(cardNumber,
-                    new CardDetails(
-                        cardNumber,
-                        cardType,
-                        cardStatus,
-                        cardIndex % 2 == 0));
-                cardIndex++;
+                foreach (CardStatus cardStatus in Enum.GetValues(typeof(CardStatus)))
+                {
+                    var cardNumber = $"Card{i}{cardIndex}";
+                    cards.Add(cardNumber,
+                        new CardDetails(
+                            cardNumber: cardNumber,
+                            cardType: cardType,
+                            cardStatus: cardStatus,
+                            isPinSet: cardIndex % 2 == 0));
+                    cardIndex++;
+                }
             }
 
             var userId = $"User{i}";

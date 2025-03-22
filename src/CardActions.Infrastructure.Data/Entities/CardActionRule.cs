@@ -1,3 +1,4 @@
+using CardActions.Domain.Enums;
 using CardActions.Domain.Models;
 
 namespace CardActions.Infrastructure.Data.Entities;

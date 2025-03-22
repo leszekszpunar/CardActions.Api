@@ -24,7 +24,7 @@ public class CardDetails
     /// <param name="cardStatus">Status karty</param>
     /// <param name="isPinSet">Czy PIN jest ustawiony</param>
     /// <exception cref="ArgumentNullException">Rzucany, gdy cardNumber jest null</exception>
-    public CardDetails(string cardNumber, CardType cardType, CardStatus cardStatus, bool isPinSet)
+    public CardDetails(string cardNumber, Enums.CardType cardType, Enums.CardStatus cardStatus, bool isPinSet)
     {
         CardNumber = cardNumber ?? throw new ArgumentNullException(nameof(cardNumber));
         CardType = cardType;
@@ -40,12 +40,12 @@ public class CardDetails
     /// <summary>
     ///     Typ karty (Prepaid, Debit, Credit).
     /// </summary>
-    public CardType CardType { get; private set; }
+    public Enums.CardType CardType { get; private set; }
 
     /// <summary>
     ///     Status karty (Ordered, Inactive, Active, Restricted, Blocked, Expired, Closed).
     /// </summary>
-    public CardStatus CardStatus { get; private set; }
+    public Enums.CardStatus CardStatus { get; private set; }
 
     /// <summary>
     ///     Określa, czy PIN jest ustawiony dla tej karty.

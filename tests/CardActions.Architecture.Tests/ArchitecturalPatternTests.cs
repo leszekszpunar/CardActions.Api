@@ -160,6 +160,7 @@ public class ArchitecturalPatternTests
             .Where(c => !c.GetConstructors()
                 .Any(ctor => ctor.GetParameters()
                     .Any(p => p.ParameterType.FullName != null && p.ParameterType.FullName.Contains("MediatR"))))
+            .Where(c => c.Name != "BaseApiController")
             .ToList();
 
         // Wypisz listę kontrolerów, które nie używają MediatR

@@ -32,6 +32,8 @@ public class CardActionsControllerTests : IClassFixture<CustomWebApplicationFact
     [Theory(DisplayName =
         "Endpoint /api/users/{userId}/cards/{cardNumber}/actions powinien zwrócić prawidłowe akcje dla istniejącej karty")]
     [InlineData("User1", "Card17", new[] { "ACTION3", "ACTION4", "ACTION9" }, "PREPAID + CLOSED - przykład z wymagań")]
+    [InlineData("User1", "Card5", new[] { "ACTION3", "ACTION4", "ACTION5", "ACTION6", "ACTION7", "ACTION8", "ACTION9" }, "CREDIT + BLOCKED - przykład z wymagań")]
+    [InlineData("User2", "Card24", new[] { "ACTION1", "ACTION2", "ACTION3", "ACTION4", "ACTION6", "ACTION7", "ACTION8" }, "DEBIT + ACTIVE - wszystkie akcje")]
     public async Task GetAllowedActions_ForValidCard_ShouldReturnExpectedActions(
         string userId,
         string cardNumber,
@@ -86,17 +88,33 @@ public class CardActionsControllerTests : IClassFixture<CustomWebApplicationFact
 
         // Act
         var response = await _client.GetAsync($"/api/users/{userId}/cards/{cardNumber}/actions");
-
+        
         // Assert
-        if (response.StatusCode != HttpStatusCode.NotFound)
-        {
-            var content = await response.Content.ReadAsStringAsync();
-            _logger.LogError("Expected NotFound but got {StatusCode}. Response content: {Content}",
-                response.StatusCode, content);
-        }
-
-        response.StatusCode.ShouldBe(HttpStatusCode.NotFound,
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound, 
             $"Endpoint powinien zwrócić status 404 NotFound dla {testCase}");
+    }
+    
+    [Theory(DisplayName =
+        "Endpoint /api/users/{userId}/cards/{cardNumber}/actions z pustymi parametrami nie powinien poprawnie dopasować ścieżki")]
+    [InlineData("", "Card17", "Brak ID użytkownika")]
+    [InlineData("User1", "", "Brak numeru karty")]
+    public async Task GetAllowedActions_WithEmptyRouteParams_ShouldNotMatch(
+        string userId,
+        string cardNumber,
+        string testCase)
+    {
+        // Arrange
+        _logger.LogInformation(
+            "Testing GetAllowedActions with invalid route parameters: user {UserId} and card {CardNumber} - {TestCase}",
+            userId, cardNumber, testCase);
+
+        // Act
+        var response = await _client.GetAsync($"/api/users/{userId}/cards/{cardNumber}/actions");
+        
+        // Assert
+        // ASP.NET Core traktuje puste segmenty URL jako niedopasowanie trasy, co skutkuje kodem 404
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound, 
+            $"Endpoint z pustym parametrem w URL powinien zwrócić status 404 NotFound dla {testCase}");
     }
 
     [Theory(DisplayName = "Metoda ParseRuleValue powinna poprawnie interpretować wartości z tabeli CSV")]

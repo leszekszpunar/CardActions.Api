@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using CardActions.Domain.Enums;
 using CardActions.Domain.Models;
 using CardActions.Domain.Policies;
 using CardActions.Infrastructure.Services.Interfaces;

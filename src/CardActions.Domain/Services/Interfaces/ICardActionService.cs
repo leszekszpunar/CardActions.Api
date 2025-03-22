@@ -1,3 +1,4 @@
+using CardActions.Domain.Enums;
 using CardActions.Domain.Models;
 
 namespace CardActions.Domain.Services.Interfaces;
@@ -17,10 +18,21 @@ public interface ICardActionService
 
     /// <summary>
     ///     Pobiera listę dozwolonych akcji dla karty o określonych parametrach.
+    ///     Metoda synchroniczna (dla kompatybilności wstecznej).
     /// </summary>
     /// <param name="cardType">Typ karty</param>
     /// <param name="cardStatus">Status karty</param>
     /// <param name="isPinSet">Czy PIN jest ustawiony</param>
     /// <returns>Lista dozwolonych akcji</returns>
-    IReadOnlyList<CardAction> GetAllowedActions(CardType cardType, CardStatus cardStatus, bool isPinSet);
+    List<CardAction> GetAllowedActions(Enums.CardType cardType, Enums.CardStatus cardStatus, bool isPinSet);
+    
+    /// <summary>
+    ///     Pobiera listę dozwolonych akcji dla karty o określonych parametrach.
+    ///     Metoda asynchroniczna.
+    /// </summary>
+    /// <param name="cardType">Typ karty</param>
+    /// <param name="cardStatus">Status karty</param>
+    /// <param name="isPinSet">Czy PIN jest ustawiony</param>
+    /// <returns>Lista dozwolonych akcji</returns>
+    Task<List<CardAction>> GetAllowedActionsAsync(Enums.CardType cardType, Enums.CardStatus cardStatus, bool isPinSet);
 }

@@ -1,5 +1,6 @@
 using CardActions.Domain.Models;
 using CardActions.Domain.Policies.Interfaces;
+using CardActions.Domain.Enums;
 
 namespace CardActions.Domain.Policies;
 
@@ -61,7 +62,7 @@ public class CardActionPolicy : ICardActionPolicy
     /// <param name="cardStatus">Status karty</param>
     /// <param name="isPinSet">Czy PIN jest ustawiony</param>
     /// <returns>True, jeśli akcja jest dozwolona; w przeciwnym razie false</returns>
-    public bool IsActionAllowed(string actionName, CardType cardType, CardStatus cardStatus, bool isPinSet)
+    public bool IsActionAllowed(string actionName, Enums.CardType cardType, Enums.CardStatus cardStatus, bool isPinSet)
     {
         // Sprawdź, czy nazwa akcji jest poprawna
         if (string.IsNullOrWhiteSpace(actionName))

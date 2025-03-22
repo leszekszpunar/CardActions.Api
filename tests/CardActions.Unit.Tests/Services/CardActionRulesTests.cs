@@ -1,8 +1,8 @@
+using CardActions.Domain.Enums;
 using CardActions.Domain.Models;
 using CardActions.Domain.Policies;
 using CardActions.Domain.Policies.Interfaces;
 using CardActions.Domain.Services;
-using CardActions.Domain.Services.Interfaces;
 using CardActions.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -35,12 +35,8 @@ public class CardActionRulesTests
 
         _policy = new CardActionPolicy(_rules);
 
-        var allActionNames = _rules
-            .Select(r => r.ActionName)
-            .Distinct()
-            .ToList();
-
-        _service = new CardActionService(_policy, allActionNames);
+        var cardServiceLogger = new Mock<ILogger<CardActionService>>().Object;
+        _service = new CardActionService(cardServiceLogger);
     }
 
     [Theory]

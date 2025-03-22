@@ -4,7 +4,6 @@ using CardActions.Domain;
 using CardActions.Domain.Policies;
 using CardActions.Domain.Policies.Interfaces;
 using CardActions.Domain.Services;
-using CardActions.Domain.Services.Interfaces;
 using CardActions.Infrastructure.Services;
 using CardActions.Infrastructure.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -87,9 +86,8 @@ public static class DependencyInjection
         // Rejestracja serwisów domenowych
         services.AddScoped<ICardActionService>(provider =>
         {
-            var policy = provider.GetRequiredService<ICardActionPolicy>();
-            var rulesProvider = provider.GetRequiredService<ICardActionRulesProvider>();
-            return new CardActionService(policy, rulesProvider.GetAllActionNames());
+            var logger = provider.GetRequiredService<ILogger<CardActionService>>();
+            return new CardActionService(logger);
         });
 
         // Rejestracja serwisu wersji
